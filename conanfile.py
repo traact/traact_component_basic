@@ -17,6 +17,8 @@ class Traact(ConanFile):
     generators = "cmake"
     settings = "os", "compiler", "build_type", "arch"
     compiler = "cppstd"
+    keep_imports=True
+    
     options = {
         "shared": [True, False],
         "with_tests": [True, False]
@@ -41,8 +43,8 @@ class Traact(ConanFile):
         self.requires("glew/2.2.0")
 
     def imports(self):
-        self.copy(src="res/bindings", pattern="imgui_impl_glfw.*", dst="imgui_bindings")
-        self.copy(src="res/bindings", pattern="imgui_impl_opengl3.*", dst="imgui_bindings")
+        self.copy(src="./res/bindings", pattern="imgui_impl_glfw.*", dst="imgui_bindings", root_package='imgui')
+        self.copy(src="./res/bindings", pattern="imgui_impl_opengl3.*", dst="imgui_bindings", root_package='imgui')
 
 
     def _configure_cmake(self):
