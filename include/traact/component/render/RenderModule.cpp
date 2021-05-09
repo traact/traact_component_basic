@@ -48,13 +48,27 @@ bool traact::component::render::RenderModule::init(traact::component::Module::Co
 
 bool traact::component::render::RenderModule::start(traact::component::Module::ComponentPtr module_component) {
 
-    if(running_)
-        return true;
-    SPDLOG_DEBUG("Starting Render Module");
-    running_ = true;
-    thread_ = std::make_shared<std::thread>([this]{
+    {
+        std::scoped_lock lock(data_lock_);
+        if(running_)
+            return true;
+        SPDLOG_DEBUG("Starting Render Module");
+        running_ = true;
+    }
+
+
+    std::shared_future<void> init_future(initialized_promise_.get_future());
+    thread_ = std::thread([this]{
         thread_loop();
     });
+
+    while (init_future.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready) {
+        if(running_){
+            spdlog::info("RenderModule: waiting for render thread to initialize");
+        }
+    }
+
+    spdlog::info("RenderModule: finished starting");
 
     return true;
 }
@@ -63,7 +77,7 @@ bool traact::component::render::RenderModule::stop(traact::component::Module::Co
     if(!running_)
         return true;
     running_ = false;
-    thread_->join();
+    thread_.join();
     return true;
 }
 
@@ -78,7 +92,7 @@ traact::component::render::RenderModule::addComponent(std::string window_name, c
 
     std::scoped_lock lock(data_lock_);
 
-    window_components_[window_name][priority].push_back(component);
+    window_components_[window_name].push_back(component);
     all_render_component_names_.push_back(component_name);
 
 
@@ -152,10 +166,8 @@ void traact::component::render::RenderModule::thread_loop() {
 
         //ImGui::Begin( window_component.first.c_str(), &running_ );
 
-        for(auto& priority_component : window_component.second){
-            for(auto& component : priority_component.second){
-                component->RenderInit();
-            }
+        for(auto& component : window_component.second){
+            component->RenderInit();
         }
 
         //ImGui::End();
@@ -165,28 +177,49 @@ void traact::component::render::RenderModule::thread_loop() {
     ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
     glfwSwapBuffers( window );
 
+    bool window_open = true;
 
-    while( running_ ){
+    initialized_promise_.set_value();
+
+    while( running_ && window_open ){
 
         //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        TimestampType ts;
+        //TimestampType ts;
         bool ready = true;
 
-//        for(const auto& window_component : window_components_)
-//        {
-//            std::string window_name = window_component.first;
-//            std::scoped_lock lock(data_lock_);
-//            for(const auto& ts_ready : render_ready_[window_name]){
-//                if(ts_ready.second.size() == all_render_component_names_.size()) {
-//                    ts = ts_ready.first;
-//                    ready = true;
-//                    break;
-//                }
-//            }
-//            if(ready)
-//                break;
-//        }
+        {
+            std::scoped_lock lock(data_lock_);
+
+            for(auto& window_components : window_components_) {
+                std::string window_name = window_components.first;
+
+
+                auto &all_commands = render_commands_[window_name];
+
+
+                if (all_commands.empty()) {
+                    continue;
+                }
+
+                auto &ts_commands = *all_commands.begin();
+                std::size_t mea_idx = ts_commands.first;
+                auto &commands = ts_commands.second;
+                bool window_ready = commands.size() == window_components_[window_name].size();
+
+                if (!window_ready)
+                    continue;
+
+                std::sort(commands.begin(), commands.end(),
+                          [](const RenderCommand::Ptr &a, const RenderCommand::Ptr &b) -> bool {
+                              return a->GetPriority() < b->GetPriority();
+                          });
+
+                current_render_commands_[window_name] = commands;
+                all_commands.erase(mea_idx);
+            }
+        }
+
 
         if(ready)
         {
@@ -199,31 +232,25 @@ void traact::component::render::RenderModule::thread_loop() {
             ImGui::NewFrame();
 
 
-            std::scoped_lock lock(data_lock_);
 
-            for(const auto& window_component : window_components_) {
-                std::string window_name = window_component.first;
+            for(auto& window_commands : current_render_commands_) {
+                std::string window_name = window_commands.first;
+                auto& all_commands = window_commands.second;
 
 
-//                const auto window_ready_data = render_ready_[window_name].find(ts);
-//                if(window_ready_data == render_ready_[window_name].end()){
-//                    spdlog::error("could nto find ready flags for renderer");
-//                    continue;
-//                }
-//                bool window_ready = window_ready_data->second.size() == all_render_component_names_.size();
-//
-//                if(!window_ready)
-//                    continue;
+                if(all_commands.empty()){
+                    spdlog::error("no render events for windows {0}", window_name);
+                    continue;
+                }
 
-                ImGui::Begin( window_name.c_str(), &running_ );
+                ImGui::Begin( window_name.c_str() );
 
-                for(auto& priority_component : window_component.second){
-                    for(auto& component : priority_component.second){
-                        component->Draw(ts);
-                    }
+                for(auto& command : all_commands){
+                    command->DoRender();
                 }
 
                 ImGui::End();
+
 
                 //render_ready_[window_name].erase(window_ready_data);
             }
@@ -236,7 +263,7 @@ void traact::component::render::RenderModule::thread_loop() {
 
 
 
-        running_ = !glfwWindowShouldClose(window);
+        window_open = !glfwWindowShouldClose(window);
     }
 
     ImGui_ImplGlfw_Shutdown();
@@ -246,15 +273,18 @@ void traact::component::render::RenderModule::thread_loop() {
     glfwTerminate();
 }
 
-traact::component::render::RenderModule::RenderModule() {
+traact::component::render::RenderModule::RenderModule() : thread_() {
 
 }
 
-void traact::component::render::RenderModule::setComponentReady(const std::string &window_name,
-                                                                const std::string &component_name,
-                                                                traact::TimestampType ts, bool valid) {
+void traact::component::render::RenderModule::setComponentReady(RenderCommand::Ptr render_command) {
+    if(render_command->GetMeaIdx() == 0){
+        spdlog::error("Timestamp is 0: {0} {1}", render_command->GetWindowName(), render_command->GetComponentName());
+        return;
+    }
+
     std::scoped_lock lock(data_lock_);
-    render_ready_[window_name][ts][component_name] = valid;
+    render_commands_[render_command->GetWindowName()][render_command->GetMeaIdx()].push_back(render_command);
 
 }
 
@@ -280,6 +310,45 @@ bool traact::component::render::RenderComponent::configure(const nlohmann::json 
 }
 
 void traact::component::render::RenderComponent::invalidTimePoint(traact::TimestampType ts, std::size_t mea_idx) {
-    render_module_->setComponentReady(window_name_, getName(), ts, false);
-    releaseAsyncCall(ts);
+    //if(ts == TimestampType::min())
+    //    return;
+    auto command = std::make_shared<RenderCommand>(window_name_, getName(), mea_idx, priority_);
+    render_module_->setComponentReady(command);
+    //releaseAsyncCall(ts);
 }
+
+void traact::component::render::RenderCommand::DoRender() {
+    if(callback_)
+        callback_();
+}
+
+traact::component::render::RenderCommand::RenderCommand(std::string window_name, std::string component_name,
+                                                        std::size_t mea_idx, std::size_t priority,
+                                                        traact::component::render::RenderCommand::CalledFromRenderer callback) :
+                                                        window_name_(std::move(window_name)), component_name_(std::move(component_name)), mea_idx_(mea_idx), priority_(priority),
+                                                        callback_(std::move(callback)){
+
+}
+
+const std::string &traact::component::render::RenderCommand::GetComponentName() const {
+    return component_name_;
+}
+
+const std::string &traact::component::render::RenderCommand::GetWindowName() const {
+    return window_name_;
+}
+
+std::size_t traact::component::render::RenderCommand::GetMeaIdx() const {
+    return mea_idx_;
+}
+
+std::size_t traact::component::render::RenderCommand::GetPriority() const {
+    return priority_;
+}
+
+traact::component::render::RenderCommand::RenderCommand(std::string window_name, std::string component_name,
+                                                        std::size_t mea_idx, std::size_t priority) :
+        window_name_(std::move(window_name)), component_name_(std::move(component_name)), mea_idx_(mea_idx), priority_(priority){
+
+}
+

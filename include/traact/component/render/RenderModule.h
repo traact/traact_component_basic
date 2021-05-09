@@ -39,9 +39,30 @@
 #include <queue>
 #include <traact/util/Semaphore.h>
 #include <thread>
+#include <future>
 
 namespace traact::component::render {
     class RenderComponent;
+
+    class RenderCommand {
+    public:
+        typedef std::shared_ptr<RenderCommand> Ptr;
+        typedef std::function<void (void)> CalledFromRenderer;
+        RenderCommand(std::string window_name, std::string component_name, std::size_t mea_idx, std::size_t priority, CalledFromRenderer callback);
+        RenderCommand(std::string window_name, std::string component_name, std::size_t mea_idx, std::size_t priority);
+        void DoRender();
+        [[nodiscard]] const std::string& GetWindowName() const;
+        [[nodiscard]] const std::string& GetComponentName() const;
+        [[nodiscard]] std::size_t GetMeaIdx() const;
+        [[nodiscard]] std::size_t GetPriority() const;
+    private:
+        std::string window_name_;
+        std::string component_name_;
+        std::size_t mea_idx_;
+        std::size_t priority_;
+
+        CalledFromRenderer callback_;
+    };
 
     class RenderModule : public Module {
     public:
@@ -57,17 +78,19 @@ namespace traact::component::render {
 
         std::size_t addComponent(std::string window_name, const std::string &component_name, RenderComponent *component,
                                  std::size_t priority);
-        void setComponentReady(const std::string &window_name, const std::string &component_name, TimestampType ts,
-                               bool valid);
+
+        void setComponentReady(RenderCommand::Ptr render_command);
 
     private:
         std::mutex data_lock_;
-        std::shared_ptr<std::thread> thread_;
+        std::thread thread_;
+        std::promise<void> initialized_promise_;
         bool running_{false};
         void thread_loop() ;
 
-        std::map<std::string, std::map<std::size_t, std::vector<RenderComponent*> > > window_components_;
-        std::map<std::string, std::map<TimestampType, std::map<std::string, bool> > > render_ready_;
+        std::map<std::string, std::vector<RenderComponent*> > window_components_;
+        std::map<std::string, std::map<std::size_t , std::vector< RenderCommand::Ptr  > > > render_commands_;
+        std::map<std::string, std::vector< RenderCommand::Ptr  > > current_render_commands_;
         std::vector<std::string> all_render_component_names_;
 
 
@@ -83,7 +106,7 @@ namespace traact::component::render {
         Module::Ptr InstantiateModule() override;
         bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override;
         virtual void RenderInit() = 0;
-        virtual void Draw(TimestampType ts) = 0;
+        //virtual void Draw(TimestampType ts) = 0;
 
         void invalidTimePoint(TimestampType ts, std::size_t mea_idx) override;
 
@@ -103,7 +126,7 @@ namespace traact::component::render {
 
         };
 
-        void Draw(TimestampType ts) override {
+        void Draw(TimestampType ts)  {
             T* tmp(nullptr);
 
             {

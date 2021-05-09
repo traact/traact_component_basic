@@ -62,11 +62,23 @@ namespace traact::component {
             pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
             //pattern->addConsumerPort("input_16Bit", traact::vision::ImageHeader::MetaType);
             pattern->addProducerPort("output", traact::spatial::Position2DListHeader::MetaType);
-
+            pattern->addParameter("threshold", 160, 0, 255)
+                        .addParameter("filter_area", false)
+                        .addParameter("area_min", 1.0, 1.0,std::numeric_limits<double>::max())
+                    .addParameter("area_max",std::numeric_limits<double>::max(), 1.0,std::numeric_limits<double>::max());
 
             return pattern;
         }
 
+        bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
+            pattern::setValueFromParameter(parameter, "threshold", threshold, threshold);
+            pattern::setValueFromParameter(parameter, "filter_area", filter_area_, filter_area_);
+            if(filter_area_){
+                pattern::setValueFromParameter(parameter, "area_min", area_min_, area_min_);
+                pattern::setValueFromParameter(parameter, "area_max", area_max_, area_max_);
+            }
+            return true;
+        }
 
 
         bool processTimePoint(buffer::ComponentBuffer &data) override {
@@ -88,19 +100,20 @@ namespace traact::component {
             params.filterByConvexity = false;
             params.filterByColor = false;
             params.filterByCircularity = true;
-            params.filterByArea = true;
+            params.filterByArea = filter_area_;
 
             params.minDistBetweenBlobs = 0.0f;
 
-            params.minThreshold = 180;
+            params.minThreshold = threshold;
             params.maxThreshold = 255;
 
 
 
-            params.minArea = 2*2;
-            float maxAreaFactor = 0.1;
-            float maxArea = maxAreaFactor*image_cpu.cols;
-            params.maxArea = maxArea*maxArea;
+            if(filter_area_) {
+                params.minArea = area_min_;
+                params.maxArea = area_max_;
+            }
+
 
             params.maxInertiaRatio = 1;
             params.minInertiaRatio = 0.5;
@@ -114,10 +127,10 @@ namespace traact::component {
             const int maxRadius = image_cpu.cols / 16;
 
 
-
-            cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
-            std::vector<cv::KeyPoint> keypoints;
-            detector->detect( image_cpu, keypoints);
+            try{
+                cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
+                std::vector<cv::KeyPoint> keypoints;
+                detector->detect( image_cpu, keypoints);
 
 //            for(auto circle : keypoints) {
 //
@@ -125,25 +138,38 @@ namespace traact::component {
 //                output.push_back(Eigen::Vector2d(circle.pt.x,circle.pt.y));
 //            }
 
-            detectCirclesMethod2(keypoints, reinterpret_cast<unsigned char*>(image_cpu.data), image_cpu.cols, maxBlobDetectionPixelError, threshold, maxRadius, output);
+                detectCirclesMethod2(keypoints, reinterpret_cast<unsigned char*>(image_cpu.data), image_cpu.cols, maxBlobDetectionPixelError, threshold, maxRadius, output);
 
-            if(keypoints.size() == output.size())
-            for(int i=0;i<keypoints.size();++i){
+                if(keypoints.size() == output.size())
+                    for(int i=0;i<keypoints.size();++i){
 
-                auto circle = keypoints[i];
-                auto point = output[i];
+                        auto circle = keypoints[i];
+                        auto point = output[i];
 
-                //spdlog::trace("blob found point {0} : {1}", circle.pt.x, circle.pt.y);
-                //spdlog::trace("circle found point {0} : {1}", point.x(), point.y());
+//                        point.x() = circle.pt.x;
+//                        point.y() = circle.pt.y;
+
+                        //spdlog::trace("blob found point {0} : {1}", circle.pt.x, circle.pt.y);
+                        //spdlog::trace("circle found point {0} : {1}", point.x(), point.y());
 
 
+                    }
+            } catch (...) {
+                return false;
             }
+
+
 
             return true;
         }
 
 
     private:
+
+        int threshold{160};
+        bool filter_area_{false};
+        double area_min_{1};
+        double area_max_{std::numeric_limits<double>::max()};
 
         template<typename T>
         void detectCirclesMethod2 (const std::vector<cv::KeyPoint>& keypoints,T* imageData, int rowSize, const int maxBlobDetectionPixelError, const T threshold,const int maxRadius, spatial::Position2DList & result ) {
@@ -210,7 +236,7 @@ namespace traact::component {
 
                 }
 
-                if(xSubpixelPoints.size() > 0 && ySubpixelPoints.size() > 0) {
+                if(!xSubpixelPoints.empty() && !ySubpixelPoints.empty() && subpixelPoints.size() > 5) {
                     cv::Vec4d topToBottomLine;
                     cv::fitLine( xSubpixelPoints, topToBottomLine, cv::DIST_L2, 0, 0.01, 0.01 );
 
@@ -231,6 +257,7 @@ namespace traact::component {
                     double subX = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/tmp;
                     double subY = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/tmp;
 
+                    //spdlog::trace("elipse points {0}", subpixelPoints.size());
                     cv::RotatedRect ellipse = cv::fitEllipse(subpixelPoints);
                     subX = ellipse.center.x;
                     subY = ellipse.center.y;

@@ -65,8 +65,12 @@ namespace traact::component::render {
             using namespace traact::spatial;
             const auto input = data.getInput<Position2DListHeader::NativeType, Position2DListHeader>(0);
 
-            std::scoped_lock lock(data_lock_);
-            data_ = input;
+            //std::scoped_lock lock(data_lock_);
+            //data_ = input;
+            auto command = std::make_shared<RenderCommand>(window_name_, getName(),
+                                                           data.GetMeaIdx(), priority_,
+                                                           [this, input] { Draw(input); });
+            render_module_->setComponentReady(command);
 
             return true;
 
@@ -77,16 +81,16 @@ namespace traact::component::render {
         }
 
 
-        void Draw(TimestampType ts) override {
-            std::scoped_lock lock(data_lock_);
+        void Draw(spatial::Position2DList data)  {
+            //std::scoped_lock lock(data_lock_);
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
             ImVec2 vMin = ImGui::GetWindowContentRegionMin();
             auto win_pos = ImGui::GetWindowPos();
-            win_pos.x += vMin.x;
-            win_pos.y += vMin.y;
+            win_pos.x += vMin.x + 0.5f;
+            win_pos.y += vMin.y+ 0.5f;
 
 
-            for(const auto& point : data_){
+            for(const auto& point : data){
                 draw_list->AddCircle(ImVec2(win_pos.x+point.x(), win_pos.y+point.y()), 5, ImColor(255,0,0));
             }
 
@@ -94,8 +98,8 @@ namespace traact::component::render {
         }
 
     private:
-        spatial::Position2DList data_;
-        std::mutex data_lock_;
+        //spatial::Position2DList data_;
+        //std::mutex data_lock_;
 
 
     RTTR_ENABLE(Component, ModuleComponent, RenderComponent)

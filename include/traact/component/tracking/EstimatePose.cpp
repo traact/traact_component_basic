@@ -42,7 +42,7 @@
 #include <iostream>
 #include <fstream>
 
-namespace traact::component::vision {
+namespace traact::component {
 
     class EstimatePose : public Component {
     public:
@@ -64,7 +64,7 @@ namespace traact::component::vision {
             pattern->addProducerPort("output", traact::spatial::Pose6DHeader::MetaType);
             pattern->addProducerPort("output_points", traact::spatial::Position2DListHeader::MetaType);
 
-            pattern->addParameter("maxPointDistance", 100.0);
+            pattern->addParameter("maxPointDistance", 150.0);
             pattern->addParameter("minError", 1.0);
             pattern->addParameter("maxError", 1.0);
             pattern->addParameter("forceZFaceCamera", true);
@@ -84,19 +84,62 @@ namespace traact::component::vision {
             return true;
         }
 
-        bool processTimePoint(buffer::ComponentBuffer &data) override {
-            using namespace traact::vision;
-            const auto& points2d = data.getInput<spatial::Position2DList, spatial::Position2DListHeader>(0);
-            const auto& points3d = data.getInput<spatial::Position3DList, spatial::Position3DListHeader>(1);
-            const auto& calibration = data.getInput<CameraCalibrationHeader::NativeType, CameraCalibrationHeader>(2);
+        bool tryTracking(std::size_t mea_idx, const spatial::Position2DList& points2d, const spatial::Position3DList& points3d, const traact::vision::CameraCalibration& calibration, spatial::Pose6D& output, spatial::Position2DList& output_points) {
 
-            auto& output = data.getOutput<traact::spatial::Pose6DHeader::NativeType, traact::spatial::Pose6DHeader>(0);
-            auto& output_points = data.getOutput<spatial::Position2DList, traact::spatial::Position2DListHeader>(1);
 
-            if(points2d.size() < points3d.size())
+            std::vector<std::size_t> candidate_index(points3d.size());
+            for(int i=0;i<points3d.size();++i) {
+                Eigen::Vector2d p = math::reproject_point(prev_pose, calibration, points3d[i]);
+
+                bool found = false;
+                for(int j=0;j<points2d.size();++j){
+                    double length = (points2d[j]- p).norm();
+                    if(length < 10) {
+                        if(found) {
+                            spdlog::warn("found second match for tracking, abort");
+                            return false;
+                        }
+                        candidate_index[i] = j;
+                        found = true;
+                    }
+                }
+            }
+
+            bool result = false;
+
+            spatial::Position2DList cur_image_points(points3d.size());
+            Eigen::Vector2d center = Eigen::Vector2d::Zero();
+            for(int point_index = 0;point_index < points3d.size();++point_index){
+                cur_image_points[point_index] = points2d[candidate_index[point_index]];
+                center = center + cur_image_points[point_index];
+            }
+
+            Eigen::Affine3d pose;
+            double error;
+            bool local_result = traact::math::estimate_camera_pose(pose,cur_image_points,calibration,points3d);
+            if(local_result) {
+                 error = traact::math::average_reprojection_error(pose,cur_image_points, calibration, points3d);
+
+                if(error < maxError_){
+
+                    output = pose;
+                    output_points = cur_image_points;
+                    prev_pose = pose;
+                    result = true;
+                }
+            }
+
+
+            if(result){
+                SPDLOG_INFO("{0}: {1}: found pose tracking final error: {2}", getName(),mea_idx, error);
+                return true;
+            } else {
+                SPDLOG_INFO("{0}: {1}: no pose found tracking", getName(),mea_idx);
                 return false;
+            }
+        }
 
-
+        bool testAllCombinations(std::size_t mea_idx, const spatial::Position2DList& points2d, const spatial::Position3DList& points3d, const traact::vision::CameraCalibration& calibration, spatial::Pose6D& output, spatial::Position2DList& output_points) {
 
             std::vector<std::size_t> candidate_index;
             for(int i=0;i<points2d.size();++i)
@@ -106,7 +149,6 @@ namespace traact::component::vision {
             spatial::Position2DList cur_image_points;
             cur_image_points.resize(points3d.size());
             std::vector<Eigen::Vector2d> final_points;
-
             bool result = false;
             double min_error = std::numeric_limits<double>::max();
 
@@ -165,18 +207,52 @@ namespace traact::component::vision {
                 }
             } while(std::next_permutation(candidate_index.begin(), candidate_index.end()) && !endSearch);
 
+
             if(result){
 
                 if(min_error > maxError_){
                     SPDLOG_INFO("{3}: found pose but rejected, final error bigger then max error {2}: {0} in {1} tests", min_error, num_tests, maxError_, getName());
                     return false;
                 }
-                SPDLOG_INFO("{0}: {1}: found pose final error: {2} in {3} tests", getName(),data.GetMeaIdx(), min_error, num_tests);
+                SPDLOG_INFO("{0}: {1}: found pose final error: {2} in {3} tests", getName(),mea_idx, min_error, num_tests);
+                prev_pose = output;
                 return true;
             } else {
-                SPDLOG_INFO("{0}: {1}: no pose found final error: {2} in {3} tests", getName(),data.GetMeaIdx(),min_error, num_tests);
+                SPDLOG_INFO("{0}: {1}: no pose found final error: {2} in {3} tests", getName(),mea_idx,min_error, num_tests);
+                prev_pose.setIdentity();
                 return false;
             }
+        }
+
+        bool processTimePoint(buffer::ComponentBuffer &data) override {
+            using namespace traact::vision;
+            const auto& points2d = data.getInput<spatial::Position2DList, spatial::Position2DListHeader>(0);
+            const auto& points3d = data.getInput<spatial::Position3DList, spatial::Position3DListHeader>(1);
+            const auto& calibration = data.getInput<CameraCalibrationHeader::NativeType, CameraCalibrationHeader>(2);
+
+            auto& output = data.getOutput<traact::spatial::Pose6DHeader::NativeType, traact::spatial::Pose6DHeader>(0);
+            auto& output_points = data.getOutput<spatial::Position2DList, traact::spatial::Position2DListHeader>(1);
+
+            if(points2d.size() < points3d.size())
+                return false;
+
+            bool result = false;
+
+//            if(!prev_pose.isApprox(Eigen::Affine3d::Identity())) {
+//                result = tryTracking(data.GetMeaIdx(), points2d, points3d, calibration, output, output_points);
+//            }
+
+
+            if(!result) {
+                result = testAllCombinations(data.GetMeaIdx(), points2d, points3d, calibration, output, output_points);
+            }
+
+
+
+
+            return result;
+
+
         }
 
 
@@ -185,6 +261,7 @@ namespace traact::component::vision {
         double minError_;
         double maxError_;
         bool forceZFaceCamera_;
+        Eigen::Affine3d prev_pose;
 
 
     RTTR_ENABLE(Component)
@@ -201,5 +278,5 @@ RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
 {
 
     using namespace rttr;
-    registration::class_<traact::component::vision::EstimatePose>("EstimatePose").constructor<std::string>()();
+    registration::class_<traact::component::EstimatePose>("EstimatePose").constructor<std::string>()();
 }

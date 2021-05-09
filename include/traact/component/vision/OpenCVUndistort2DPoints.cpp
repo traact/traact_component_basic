@@ -29,20 +29,22 @@
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **/
 
+
 #include <rttr/registration>
 
 
 #include <traact/traact.h>
 #include <traact/vision.h>
+#include <traact/spatial.h>
 #include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
+#include <traact/opencv/OpenCVUtils.h>
+namespace traact::component {
 
-namespace traact::component::vision {
-
-    class OpenCvConvertImage : public Component {
+    class OpenCVUndistort2DPoints : public Component {
     public:
-        explicit OpenCvConvertImage(const std::string &name) : Component(name,
-                                                                           traact::component::ComponentType::Functional) {
+        explicit OpenCVUndistort2DPoints(const std::string &name) : Component(name,
+                                                                         traact::component::ComponentType::Functional) {
         }
 
         traact::pattern::Pattern::Ptr GetPattern()  const {
@@ -50,35 +52,44 @@ namespace traact::component::vision {
 
             traact::pattern::spatial::SpatialPattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("OpenCvConvertImage", serial);
+                    std::make_shared<traact::pattern::spatial::SpatialPattern>("OpenCVUndistort2DPoints", serial);
 
-            pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
-            pattern->addProducerPort("output", traact::vision::ImageHeader::MetaType);
+            pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::MetaType);
+            pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::MetaType);
+            pattern->addProducerPort("output", traact::spatial::Position2DListHeader::MetaType);
 
-            pattern->addParameter("alpha", 255.0/2000.0);
-            pattern->addParameter("beta", 0);
-
-
-            pattern->addCoordianteSystem("ImagePlane")
-                    .addCoordianteSystem("Image", true)
-                    .addEdge("ImagePlane", "Image", "input")
-                    .addEdge("ImagePlane", "Image", "output");
 
             return pattern;
         }
 
-        bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
-            pattern::setValueFromParameter(parameter, "alpha", alpha_, 255.0 / 2000.0);
-            pattern::setValueFromParameter(parameter, "beta", beta_, 0);
-            return true;
-        }
 
         bool processTimePoint(buffer::ComponentBuffer &data) override {
+            using namespace traact::spatial;
             using namespace traact::vision;
-            const auto& image = data.getInput<ImageHeader::NativeType, ImageHeader>(0);
-            auto& output = data.getOutput<ImageHeader::NativeType, ImageHeader>(0);
+            const auto& input = data.getInput<Position2DListHeader::NativeType, Position2DListHeader>(0);
+            const auto& calibration = data.getInput<CameraCalibrationHeader::NativeType, CameraCalibrationHeader>(1);
+            auto& output = data.getOutput<Position2DListHeader::NativeType, Position2DListHeader>(0);
 
-            image.GetCpuMat().convertTo(output.GetCpuMat(), CV_MAKETYPE(CV_MAT_DEPTH(CV_8UC1), 1),  alpha_,beta_);
+            output.resize(input.size());
+            if(input.empty())
+                return true;
+
+            cv::Mat cv_intrinsics;
+            cv::Mat cv_distortion;
+            traact2cv(calibration,cv_intrinsics, cv_distortion);
+            std::vector<cv::Point2f> opencv_points;
+
+            for(auto& point : input) {
+                opencv_points.push_back(eigen2cv(point));
+            }
+            std::vector<cv::Point2f> opencv_points_output(opencv_points.size());
+            cv::undistortPoints(opencv_points,opencv_points_output, cv_intrinsics, cv_distortion, cv::noArray(), cv_intrinsics);
+
+            for(int i=0;i<opencv_points_output.size();++i){
+                output[i].x() = opencv_points_output[i].x;
+                output[i].y() = opencv_points_output[i].y;
+            }
+
 
             return true;
         }
@@ -102,5 +113,5 @@ RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
 {
 
     using namespace rttr;
-    registration::class_<traact::component::vision::OpenCvConvertImage>("OpenCvConvertImage").constructor<std::string>()();
+    registration::class_<traact::component::OpenCVUndistort2DPoints>("OpenCVUndistort2DPoints").constructor<std::string>()();
 }

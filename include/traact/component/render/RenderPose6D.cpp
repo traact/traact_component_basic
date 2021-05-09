@@ -65,15 +65,20 @@ namespace traact::component::render {
 
         bool processTimePoint(traact::DefaultComponentBuffer &data) override {
             using namespace traact::spatial;
-            std::scoped_lock lock(data_lock_);
-            data_ = data.getInput<Pose6DHeader::NativeType, Pose6DHeader>(0);
-            intrinsics_ = data.getInput<vision::CameraCalibrationHeader::NativeType, vision::CameraCalibrationHeader>(1);
+            //std::scoped_lock lock(data_lock_);
+            auto pose = data.getInput<Pose6DHeader::NativeType, Pose6DHeader>(0);
+            auto calibration = data.getInput<vision::CameraCalibrationHeader::NativeType, vision::CameraCalibrationHeader>(1);
 
 //            {
 //                std::scoped_lock lock(data_lock_);
 //                data_.emplace(data.getTimestamp(), &input);
 //            }
 //            render_module_->setComponentReady(window_name_, getName(), data.getTimestamp(), true);
+
+            auto command = std::make_shared<RenderCommand>(window_name_, getName(),
+                                                           data.GetMeaIdx(), priority_,
+                                                           [this, calibration, pose] { Draw(calibration, pose); });
+            render_module_->setComponentReady(command);
 
 
             return true;
@@ -84,8 +89,8 @@ namespace traact::component::render {
 
         }
 
-        void Draw(TimestampType ts) override {
-            std::scoped_lock lock(data_lock_);
+        void Draw(vision::CameraCalibration calibration, spatial::Pose6D pose)  {
+            //std::scoped_lock lock(data_lock_);
             ImDrawList* draw_list = ImGui::GetWindowDrawList();
             ImVec2 vMin = ImGui::GetWindowContentRegionMin();
             auto win_pos = ImGui::GetWindowPos();
@@ -94,13 +99,13 @@ namespace traact::component::render {
 
             Eigen::Vector2d win_offset(win_pos.x, win_pos.y);
 
-            auto p0 = traact::math::reproject_point(data_, intrinsics_,
+            auto p0 = traact::math::reproject_point(pose, calibration,
                                                     Eigen::Vector3d(0, 0, 0)) ;
-            auto px = traact::math::reproject_point(data_, intrinsics_,
+            auto px = traact::math::reproject_point(pose, calibration,
                                                     Eigen::Vector3d(1, 0, 0));
-            auto py = traact::math::reproject_point(data_, intrinsics_,
+            auto py = traact::math::reproject_point(pose, calibration,
                                                     Eigen::Vector3d(0, 1, 0));
-            auto pz = traact::math::reproject_point(data_, intrinsics_,
+            auto pz = traact::math::reproject_point(pose, calibration,
                                                     Eigen::Vector3d(0, 0, 1));
 
             ImVec2 p_0(win_pos.x+p0.x(),win_pos.y+p0.y());
@@ -117,9 +122,9 @@ namespace traact::component::render {
         }
 
     private:
-        spatial::Pose6D data_;
-        vision::CameraCalibration intrinsics_;
-        std::mutex data_lock_;
+        //spatial::Pose6D data_;
+        //vision::CameraCalibration intrinsics_;
+        //std::mutex data_lock_;
 
 
     RTTR_ENABLE(Component, ModuleComponent, RenderComponent)

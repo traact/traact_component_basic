@@ -37,7 +37,7 @@ set(LIB_HEADERS
 set(IMGUI_BINDING_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.h
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.h
-        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp include/traact/component/render/RenderPose6D.cpp)
+        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp include/traact/component/render/RenderPose6D.cpp include/traact/component/vision/OpenCVUndistort2DPoints.cpp)
 
 # conan is required hard, library name, version and description are configured from conan
 if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)

@@ -64,18 +64,16 @@ class RenderImage : public RenderComponent {
         }
 
         bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
-            priority_ = 0;
-            window_name_ = getName();
             render_module_ = std::dynamic_pointer_cast<RenderModule>(module_);
-            pattern::setValueFromParameter(parameter, "window", window_name_, "invalid");
-            pattern::setValueFromParameter(parameter, "priority", priority_, 1);
+            pattern::setValueFromParameter(parameter, "window", window_name_, getName());
+            pattern::setValueFromParameter(parameter, "priority", priority_, 0);
             render_module_->addComponent(window_name_, getName(), this, priority_);
 
             //parameter["window"]["value"] = getName();
             //RenderComponent::configure(parameter, data);
 
             //render_module_->addComponent(getName(), getName(), this, 0);
-            image_ = cv::Mat(64,48,CV_8UC4);
+            //image_ = cv::Mat(64,48,CV_8UC4);
 
 
             return true;
@@ -90,8 +88,16 @@ class RenderImage : public RenderComponent {
 //                data_.emplace(data.getTimestamp(), &input);
 //            }
 //            render_module_->setComponentReady(window_name_, getName(), data.getTimestamp(), true);
-            std::scoped_lock lock(data_lock_);
-            cv::cvtColor(input.GetCpuMat(), image_, cv::COLOR_GRAY2RGBA);
+            //std::scoped_lock lock(data_lock_);
+            //cv::cvtColor(input.GetCpuMat(), image_, cv::COLOR_GRAY2RGBA);
+            cv::Mat image;
+            cv::cvtColor(input.GetCpuMat(), image, cv::COLOR_GRAY2RGBA);
+            auto command = std::make_shared<RenderCommand>(window_name_, getName(),
+                                                           data.GetMeaIdx(), priority_,
+                                                           [this, image] { Draw(image); });
+
+            render_module_->setComponentReady(command);
+
 
             return true;
 
@@ -101,8 +107,8 @@ class RenderImage : public RenderComponent {
 
     }
 
-    void Draw(TimestampType ts ) override {
-        std::scoped_lock lock(data_lock_);
+    void Draw(cv::Mat image )  {
+        //std::scoped_lock lock(data_lock_);
 
 
         if(!init_texture_){
@@ -111,21 +117,21 @@ class RenderImage : public RenderComponent {
         }
 
 
-        spdlog::info("update image");
-
             glBindTexture( GL_TEXTURE_2D, texture_ );
             glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
             glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
             glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
-            glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, image_.cols, image_.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_.data );
-            ImGui::Image( reinterpret_cast<void*>( static_cast<intptr_t>( texture_ ) ), ImVec2( image_.cols, image_.rows ) );
+            glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, image.cols, image.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data );
+            ImVec2 avail_size = ImGui::GetContentRegionAvail();
+            //ImGui::Image( reinterpret_cast<void*>( static_cast<intptr_t>( texture_ ) ), ImVec2( image_.cols, image_.rows ) );
+            ImGui::Image( reinterpret_cast<void*>( static_cast<intptr_t>( texture_ ) ), avail_size );
         }
 
     private:
     GLuint texture_;
         bool init_texture_{false};
-        std::mutex data_lock_;
-        cv::Mat image_;
+        //std::mutex data_lock_;
+        //cv::Mat image_;
 
 
     RTTR_ENABLE(Component, ModuleComponent, RenderComponent)
