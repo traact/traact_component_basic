@@ -49,9 +49,9 @@ namespace traact::component::vision {
 
         traact::pattern::Pattern::Ptr GetPattern() const {
             using namespace traact::vision;
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("DebugWindow", serial);
+                    std::make_shared<traact::pattern::Pattern>("DebugWindow", serial);
 
             pattern->addConsumerPort("input", ImageHeader::MetaType);
             pattern->addConsumerPort("input_intrinsics", CameraCalibrationHeader::MetaType);
@@ -59,6 +59,15 @@ namespace traact::component::vision {
             pattern->addConsumerPort("target_pose", spatial::Pose6DHeader::MetaType);
 
             pattern->addParameter("WaitForNextFrame", false);
+
+            pattern->addCoordinateSystem("Camera")
+            .addCoordinateSystem("ImagePlane")
+            .addCoordinateSystem("Target")
+            .addCoordinateSystem("TargetPoints")
+            .addEdge("Camera","ImagePlane","input")
+            .addEdge("ImagePlane", "Camera", "input_intrinsics")
+            .addEdge("Camera", "Target", "target_pose")
+            .addEdge("ImagePlane", "TargetPoints", "input_2d_tracking");
 
             return pattern;
         }
@@ -91,7 +100,7 @@ namespace traact::component::vision {
             {
 
 
-                mea_idx_ = data.GetMeaIdx();
+                mea_idx_ = 0;//data.GetMeaIdx();
                 const auto& intrinsics_ = data.getInput<CameraCalibrationHeader::NativeType, CameraCalibrationHeader>(1);
                 const auto& tracking_list_ = data.getInput<spatial::Position2DListHeader::NativeType, spatial::Position2DListHeader>(2);
                 const auto& pose_c2w = data.getInput<spatial::Pose6DHeader::NativeType, spatial::Pose6DHeader>(3);
@@ -118,7 +127,7 @@ namespace traact::component::vision {
                          cv::Scalar(255, 0, 0), 1);
 
             }
-            auto ts = data.getTimestamp();
+            auto ts = data.GetTimestamp();
             std::chrono::duration<double> diff = ts - last_ts_;
             last_ts_ = ts;
             fps_ = fps_*0.6 + 0.4 * 1.0 / diff.count();

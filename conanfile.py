@@ -17,7 +17,7 @@ class Traact(ConanFile):
     generators = "cmake"
     settings = "os", "compiler", "build_type", "arch"
     compiler = "cppstd"
-    keep_imports=True
+    keep_imports = True
     
     options = {
         "shared": [True, False],
@@ -38,7 +38,7 @@ class Traact(ConanFile):
         self.requires("spdlog/1.8.2")
         self.requires("traact_spatial/%s@camposs/stable" % self.version)
         self.requires("traact_vision/%s@camposs/stable" % self.version)
-        self.requires("imgui/1.82")
+        self.requires("imgui/1.83")
         self.requires("glfw/3.3.4")
         self.requires("glew/2.2.0")
 

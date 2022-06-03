@@ -49,15 +49,15 @@ namespace traact::component {
     class CircleTracking : public Component {
     public:
         explicit CircleTracking(const std::string &name) : Component(name,
-                                                                         traact::component::ComponentType::Functional) {
+                                                                         traact::component::ComponentType::SyncFunctional) {
         }
 
         traact::pattern::Pattern::Ptr GetPattern()  const {
 
 
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("CircleTracking", unlimited);
+                    std::make_shared<traact::pattern::Pattern>("CircleTracking", unlimited);
 
             pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
             //pattern->addConsumerPort("input_16Bit", traact::vision::ImageHeader::MetaType);
@@ -66,6 +66,11 @@ namespace traact::component {
                         .addParameter("filter_area", false)
                         .addParameter("area_min", 1.0, 1.0,std::numeric_limits<double>::max())
                     .addParameter("area_max",std::numeric_limits<double>::max(), 1.0,std::numeric_limits<double>::max());
+
+            pattern->addCoordinateSystem("Camera").addCoordinateSystem("ImagePlane")
+            .addCoordinateSystem("Points")
+            .addEdge("Camera","ImagePlane","input")
+            .addEdge("ImagePlane","Points", "output");
 
             return pattern;
         }

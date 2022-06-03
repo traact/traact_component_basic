@@ -35,7 +35,7 @@
 #include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
 #include <thread>
-
+#include <traact/buffer/SourceComponentBuffer.h>
 namespace traact::component::vision {
 
     class OpenCVVideoCapture : public Component {
@@ -48,7 +48,7 @@ namespace traact::component::vision {
         traact::pattern::Pattern::Ptr GetPattern()  const {
 
 
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern = getUncalibratedCameraPattern();
             pattern->name = "OpenCVVideoCapture";
 
@@ -101,7 +101,13 @@ namespace traact::component::vision {
                 SPDLOG_INFO("new image height: {0}", image.rows);
 
 
-                auto buffer = request_callback_(ts);
+                auto buffer_future = request_callback_(ts);
+                buffer_future.wait();
+                auto buffer = buffer_future.get();
+                if(!buffer){
+                    SPDLOG_WARN("Could not get source buffer for ts {0}", ts.time_since_epoch().count());
+                    continue;
+                }
                 auto &newData = buffer->getOutput<ImageHeader::NativeType, ImageHeader>(0);
 
                 if(!newData.IsCpu() && !newData.IsGpu()){

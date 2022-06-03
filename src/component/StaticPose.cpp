@@ -50,9 +50,9 @@ namespace traact::component {
 
             std::string pattern_name = fmt::format("StaticPose");
 
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>(pattern_name, serial);
+                    std::make_shared<traact::pattern::Pattern>(pattern_name, serial);
 
             pattern->addProducerPort("output", spatial::Pose6DHeader::MetaType);
 
@@ -64,6 +64,8 @@ namespace traact::component {
             pattern->addParameter("ry",0);
             pattern->addParameter("rz",0);
             pattern->addParameter("rw",1);
+
+            pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("A","B","output");
 
             return pattern;
         }

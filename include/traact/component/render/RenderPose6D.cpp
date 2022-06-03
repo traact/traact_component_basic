@@ -53,13 +53,17 @@ namespace traact::component::render {
 
         traact::pattern::Pattern::Ptr GetPattern() const {
             using namespace traact::spatial;
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("RenderPose6D", serial);
+                    std::make_shared<traact::pattern::Pattern>("RenderPose6D", serial);
 
             pattern->addConsumerPort("input", Pose6DHeader::MetaType);
             pattern->addConsumerPort("input_calibration", vision::CameraCalibrationHeader::MetaType);
             pattern->addStringParameter("window", "invalid");
+            pattern->addCoordinateSystem("Camera").addCoordinateSystem("ImagePlane")
+            .addCoordinateSystem("Target")
+            .addEdge("ImagePlane","Camera","input_calibration")
+            .addEdge("Camera","Target", "input");
             return pattern;
         }
 
@@ -69,14 +73,9 @@ namespace traact::component::render {
             auto pose = data.getInput<Pose6DHeader::NativeType, Pose6DHeader>(0);
             auto calibration = data.getInput<vision::CameraCalibrationHeader::NativeType, vision::CameraCalibrationHeader>(1);
 
-//            {
-//                std::scoped_lock lock(data_lock_);
-//                data_.emplace(data.getTimestamp(), &input);
-//            }
-//            render_module_->setComponentReady(window_name_, getName(), data.getTimestamp(), true);
-
             auto command = std::make_shared<RenderCommand>(window_name_, getName(),
-                                                           data.GetMeaIdx(), priority_,
+                                                           data.GetTimestamp().time_since_epoch().count()
+                                                           , priority_,
                                                            [this, calibration, pose] { Draw(calibration, pose); });
             render_module_->setComponentReady(command);
 
@@ -96,6 +95,10 @@ namespace traact::component::render {
             auto win_pos = ImGui::GetWindowPos();
             win_pos.x += vMin.x;
             win_pos.y += vMin.y;
+            auto content_max = ImGui::GetWindowContentRegionMax();
+
+            double scalex = content_max.x / calibration.width;
+            double scaley = content_max.y / calibration.height;
 
             Eigen::Vector2d win_offset(win_pos.x, win_pos.y);
 
@@ -108,13 +111,16 @@ namespace traact::component::render {
             auto pz = traact::math::reproject_point(pose, calibration,
                                                     Eigen::Vector3d(0, 0, 1));
 
-            ImVec2 p_0(win_pos.x+p0.x(),win_pos.y+p0.y());
 
-            draw_list->AddLine(p_0, ImVec2(win_pos.x+px.x(),win_pos.y+px.y()), ImColor(255,0,0),2);
+
+
+            ImVec2 p_0(win_pos.x+p0.x()*scalex,win_pos.y+p0.y()*scaley);
+
+            draw_list->AddLine(p_0, ImVec2(win_pos.x+px.x()*scalex,win_pos.y+px.y()*scaley), ImColor(255,0,0),2);
             //draw_list->AddDrawCmd();
-            draw_list->AddLine(p_0, ImVec2(win_pos.x+py.x(),win_pos.y+py.y()), ImColor(0,255,0),2);
+            draw_list->AddLine(p_0, ImVec2(win_pos.x+py.x()*scalex,win_pos.y+py.y()*scaley), ImColor(0,255,0),2);
             //draw_list->AddDrawCmd();
-            draw_list->AddLine(p_0, ImVec2(win_pos.x+pz.x(),win_pos.y+pz.y()), ImColor(0,0,255),2);
+            draw_list->AddLine(p_0, ImVec2(win_pos.x+pz.x()*scalex,win_pos.y+pz.y()*scaley), ImColor(0,0,255),2);
             //draw_list->AddDrawCmd();
 
 

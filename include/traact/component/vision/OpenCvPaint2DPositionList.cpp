@@ -46,12 +46,14 @@ namespace traact::component::vision {
 
         traact::pattern::Pattern::Ptr GetPattern() const {
             using namespace traact::vision;
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("OpenCvPaint2DPositionList", serial);
+                    std::make_shared<traact::pattern::Pattern>("OpenCvPaint2DPositionList", serial);
 
             pattern->addConsumerPort("input", spatial::Position2DListHeader::MetaType);
             pattern->addStringParameter("window", "sink");
+            pattern->addCoordinateSystem("ImagePlane").addCoordinateSystem("Points")
+            .addEdge("ImagePlane","Points","input");
 
             return pattern;
         }

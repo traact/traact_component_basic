@@ -38,19 +38,19 @@ namespace traact::component::spatial::core {
 
     class InversionComponent : public Component {
     public:
-        explicit InversionComponent(const std::string &name) : Component(name, ComponentType::Functional) {}
+        explicit InversionComponent(const std::string &name) : Component(name, ComponentType::SyncFunctional) {}
 
 
         pattern::Pattern::Ptr GetPattern() const{
             using namespace traact::spatial;
-            pattern::spatial::SpatialPattern::Ptr
-                    pattern = std::make_shared<pattern::spatial::SpatialPattern>("InversionComponent", unlimited);
+            pattern::Pattern::Ptr
+                    pattern = std::make_shared<pattern::Pattern>("InversionComponent", unlimited);
 
             pattern->addConsumerPort("input", Pose6DHeader::MetaType)
                     .addProducerPort("output", Pose6DHeader::MetaType);
 
-            pattern->addCoordianteSystem("A", false)
-                    .addCoordianteSystem("B", false)
+            pattern->addCoordinateSystem("A", false)
+                    .addCoordinateSystem("B", false)
                     .addEdge("A", "B", "input")
                     .addEdge("B", "A", "output");
 

@@ -47,11 +47,13 @@ namespace traact::component::vision {
 
         traact::pattern::Pattern::Ptr GetPattern() const {
             using namespace traact::vision;
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("SyncOpenCvMultiWindow", serial);
+                    std::make_shared<traact::pattern::Pattern>("SyncOpenCvMultiWindow", serial);
 
             pattern->addConsumerPort("input", ImageHeader::MetaType);
+
+            pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("Camera","ImagePlane","input");
 
             return pattern;
         }
@@ -78,7 +80,7 @@ namespace traact::component::vision {
             auto inputCount = data.GetInputCount();
             for(int i = 0; i < inputCount; ++i){
                 //const auto input = data.borrowInput<ImageHeader::NativeType, ImageHeader>(i);
-                //render_module_->updateWindow(getName() + "_" + std::to_string(i + 1), data.getTimestamp().time_since_epoch().count(), input);
+                //render_module_->updateWindow(getName() + "_" + std::to_string(i + 1), data.GetTimestamp().time_since_epoch().count(), input);
             }
 
 

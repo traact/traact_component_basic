@@ -17,6 +17,7 @@ set(LIB_HEADERS
         src/component/PrintBodyList.h
         src/component/StaticPose.cpp
         include/traact/component/InversionComponent.cpp
+        include/traact/component/vision/OpenCvColorToGray.cpp
 
         src/VisionPlugin.cpp
         include/traact/component/vision/OpenCVModule.h
@@ -28,16 +29,18 @@ set(LIB_HEADERS
         include/traact/component/vision/OpenCvConvertImage.cpp
         include/traact/component/tracking/CircleTracking.cpp
         include/traact/component/vision/OpenCvPaint2DPositionList.cpp
+        include/traact/component/vision/OpenCVArucoTracker.cpp
         include/traact/component/tracking/EstimatePose.cpp
         include/traact/component/vision/DebugWindow.cpp
-        include/traact/component/render/RenderModule.cpp include/traact/component/render/RenderModule.h include/traact/component/render/RenderImage.cpp include/traact/component/render/RenderPosition2DList.cpp)
+        include/traact/component/render/RenderModule.cpp include/traact/component/render/RenderModule.h include/traact/component/render/RenderImage.cpp include/traact/component/render/RenderPosition2DList.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInModule.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInModule.h include/traact/component/featureless_outside_in/FeaturelessOutsideInCameraInput.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInTrackingOutput.cpp
+        include/traact/component/render/RenderPose6D.cpp include/traact/component/vision/OpenCVUndistort2DPoints.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInTracking.cpp)
 
 # rest of source code
 #set(LIB_SOURCES )
 set(IMGUI_BINDING_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.h
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.h
-        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp include/traact/component/render/RenderPose6D.cpp include/traact/component/vision/OpenCVUndistort2DPoints.cpp)
+        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp )
 
 # conan is required hard, library name, version and description are configured from conan
 if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)

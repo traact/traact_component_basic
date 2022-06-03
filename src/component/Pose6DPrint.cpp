@@ -44,11 +44,13 @@ namespace traact::component::spatial::util {
 
         traact::pattern::Pattern::Ptr GetPattern() const {
             using namespace traact::spatial;
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("Pose6DPrint", serial);
+                    std::make_shared<traact::pattern::Pattern>("Pose6DPrint", serial);
 
             pattern->addConsumerPort("input", Pose6DHeader::MetaType);
+
+            pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("A","B","input");
 
             return pattern;
         }
@@ -57,7 +59,7 @@ namespace traact::component::spatial::util {
             using namespace traact::spatial;
             const auto &input = data.getInput<Pose6DHeader::NativeType, Pose6DHeader>(0);
 
-            traact::TimestampType ts = data.getTimestamp();
+            traact::TimestampType ts = data.GetTimestamp();
             if (ts < lastTimestamp) {
                 spdlog::warn("current ts: {0} < lastTs: {1}",
                              ts.time_since_epoch().count(),

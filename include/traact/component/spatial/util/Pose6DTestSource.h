@@ -35,6 +35,7 @@
 #include <traact/traact.h>
 #include <traact/spatial.h>
 #include <thread>
+#include <traact/buffer/SourceComponentBuffer.h>
 
 namespace traact::component::spatial::util {
 class Pose6DTestSource : public Component {
@@ -47,13 +48,13 @@ class Pose6DTestSource : public Component {
   traact::pattern::Pattern::Ptr GetPattern() const{
     using namespace traact::spatial;
 
-    traact::pattern::spatial::SpatialPattern::Ptr
+    traact::pattern::Pattern::Ptr
         pattern =
-        std::make_shared<traact::pattern::spatial::SpatialPattern>("Pose6DTestSource", unlimited);
+        std::make_shared<traact::pattern::Pattern>("Pose6DTestSource", unlimited);
 
     pattern->addProducerPort("output", Pose6DHeader::MetaType);
-    pattern->addCoordianteSystem("Origin", false)
-        .addCoordianteSystem("Target", false)
+      pattern->addCoordinateSystem("Origin", false)
+              .addCoordinateSystem("Target", false)
         .addEdge("Origin", "Target", "output");
 
     return pattern;
@@ -99,7 +100,9 @@ class Pose6DTestSource : public Component {
 
       spdlog::trace("request buffer");
 
-    auto buffer = request_callback_(ts);
+    auto buffer_future = request_callback_(ts);
+    buffer_future.wait();
+    auto buffer = buffer_future.get();
     if (buffer == nullptr){
         SPDLOG_WARN("request for buffer at ts {0} was rejected", ts.time_since_epoch().count());
         continue;

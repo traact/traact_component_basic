@@ -52,12 +52,13 @@ namespace traact::component::render {
 
         traact::pattern::Pattern::Ptr GetPattern() const {
             using namespace traact::spatial;
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("RenderPosition2DList", serial);
+                    std::make_shared<traact::pattern::Pattern>("RenderPosition2DList", serial);
 
             pattern->addConsumerPort("input", Position2DListHeader::MetaType);
             pattern->addStringParameter("window", "invalid");
+            pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("ImagePlane","Points","input");
             return pattern;
         }
 
@@ -68,7 +69,8 @@ namespace traact::component::render {
             //std::scoped_lock lock(data_lock_);
             //data_ = input;
             auto command = std::make_shared<RenderCommand>(window_name_, getName(),
-                                                           data.GetMeaIdx(), priority_,
+                                                           data.GetTimestamp().time_since_epoch().count()
+                                                           , priority_,
                                                            [this, input] { Draw(input); });
             render_module_->setComponentReady(command);
 

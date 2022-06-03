@@ -54,11 +54,12 @@ class RenderImage : public RenderComponent {
 
         traact::pattern::Pattern::Ptr GetPattern() const {
             using namespace traact::vision;
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("RenderImage", serial);
+                    std::make_shared<traact::pattern::Pattern>("RenderImage", serial);
 
             pattern->addConsumerPort("input", ImageHeader::MetaType);
+            pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("Camera","ImagePlane","input");
 
             return pattern;
         }
@@ -85,15 +86,22 @@ class RenderImage : public RenderComponent {
 
 //            {
 //                std::scoped_lock lock(data_lock_);
-//                data_.emplace(data.getTimestamp(), &input);
+//                data_.emplace(data.GetTimestamp(), &input);
 //            }
-//            render_module_->setComponentReady(window_name_, getName(), data.getTimestamp(), true);
+//            render_module_->setComponentReady(window_name_, getName(), data.GetTimestamp(), true);
             //std::scoped_lock lock(data_lock_);
             //cv::cvtColor(input.GetCpuMat(), image_, cv::COLOR_GRAY2RGBA);
+            auto input_mat = input.GetCpuMat();
             cv::Mat image;
-            cv::cvtColor(input.GetCpuMat(), image, cv::COLOR_GRAY2RGBA);
+            if(input_mat.channels() == 4)
+                image = input_mat.clone();
+            else if(input_mat.channels() == 3)
+                cv::cvtColor(input.GetCpuMat(), image, cv::COLOR_RGB2RGBA);
+            else
+                cv::cvtColor(input.GetCpuMat(), image, cv::COLOR_GRAY2RGBA);
             auto command = std::make_shared<RenderCommand>(window_name_, getName(),
-                                                           data.GetMeaIdx(), priority_,
+                                                           data.GetTimestamp().time_since_epoch().count()
+                                                           , priority_,
                                                            [this, image] { Draw(image); });
 
             render_module_->setComponentReady(command);

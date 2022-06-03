@@ -140,7 +140,7 @@ namespace traact::component::render {
 
             if(tmp) {
                 DrawNow(ts, *tmp);
-                releaseAsyncCall(ts);
+                releaseAsyncCall(ts, false);
             }
 
 

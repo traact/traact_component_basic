@@ -44,19 +44,26 @@ namespace traact::component {
     class OpenCVUndistort2DPoints : public Component {
     public:
         explicit OpenCVUndistort2DPoints(const std::string &name) : Component(name,
-                                                                         traact::component::ComponentType::Functional) {
+                                                                         traact::component::ComponentType::SyncFunctional) {
         }
 
         traact::pattern::Pattern::Ptr GetPattern()  const {
 
 
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("OpenCVUndistort2DPoints", serial);
+                    std::make_shared<traact::pattern::Pattern>("OpenCVUndistort2DPoints", serial);
 
             pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::MetaType);
             pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::MetaType);
             pattern->addProducerPort("output", traact::spatial::Position2DListHeader::MetaType);
+
+            pattern->addCoordinateSystem("ImagePlane_Distorted")
+            .addCoordinateSystem("ImagePlane_Undistorted")
+            .addCoordinateSystem("Points")
+             .addEdge("ImagePlane_Distorted","ImagePlane_Undistorted","input_calibration")
+             .addEdge("ImagePlane_Distorted","Points","input")
+             .addEdge("ImagePlane_Undistorted","Points","output");
 
 
             return pattern;

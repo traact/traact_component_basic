@@ -37,21 +37,21 @@ namespace traact::component::spatial::core {
 
     class MultiplicationComponent : public Component {
     public:
-        explicit MultiplicationComponent(const std::string &name) : Component(name, ComponentType::Functional) {}
+        explicit MultiplicationComponent(const std::string &name) : Component(name, ComponentType::SyncFunctional) {}
 
 
         pattern::Pattern::Ptr GetPattern() const{
             using namespace traact::spatial;
-            pattern::spatial::SpatialPattern::Ptr
-                    pattern = std::make_shared<pattern::spatial::SpatialPattern>("MultiplicationComponent", unlimited);
+            pattern::Pattern::Ptr
+                    pattern = std::make_shared<pattern::Pattern>("MultiplicationComponent", unlimited);
 
             pattern->addConsumerPort("input0", Pose6DHeader::MetaType)
                     .addConsumerPort("input1", Pose6DHeader::MetaType)
                     .addProducerPort("output", Pose6DHeader::MetaType);
 
-            pattern->addCoordianteSystem("A", false)
-                    .addCoordianteSystem("B", false)
-                    .addCoordianteSystem("C", false)
+            pattern->addCoordinateSystem("A", false)
+                    .addCoordinateSystem("B", false)
+                    .addCoordinateSystem("C", false)
                     .addEdge("A", "B", "input0")
                     .addEdge("B", "C", "input1")
                     .addEdge("A", "C", "output");

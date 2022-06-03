@@ -36,13 +36,14 @@
 #include <traact/vision.h>
 #include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
+#include <opencv2/imgproc.hpp>
 
 namespace traact::component::vision {
 
-    class OpenCvConvertImage : public Component {
+    class OpenCvColorToGray : public Component {
     public:
-        explicit OpenCvConvertImage(const std::string &name) : Component(name,
-                                                                           traact::component::ComponentType::SyncFunctional) {
+        explicit OpenCvColorToGray(const std::string &name) : Component(name,
+                                                                         traact::component::ComponentType::SyncFunctional) {
         }
 
         traact::pattern::Pattern::Ptr GetPattern()  const {
@@ -50,13 +51,10 @@ namespace traact::component::vision {
 
             traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::Pattern>("OpenCvConvertImage", serial);
+                    std::make_shared<traact::pattern::Pattern>("OpenCvColorToGray", serial);
 
             pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
             pattern->addProducerPort("output", traact::vision::ImageHeader::MetaType);
-
-            pattern->addParameter("alpha", 255.0/2000.0);
-            pattern->addParameter("beta", 0);
 
 
             pattern->addCoordinateSystem("ImagePlane")
@@ -68,25 +66,25 @@ namespace traact::component::vision {
         }
 
         bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
-            pattern::setValueFromParameter(parameter, "alpha", alpha_, 255.0 / 2000.0);
-            pattern::setValueFromParameter(parameter, "beta", beta_, 0);
             return true;
         }
 
         bool processTimePoint(buffer::ComponentBuffer &data) override {
             using namespace traact::vision;
-            const auto& image = data.getInput<ImageHeader::NativeType, ImageHeader>(0);
-            auto& output = data.getOutput<ImageHeader::NativeType, ImageHeader>(0);
+            const auto& input = data.getInput<ImageHeader::NativeType, ImageHeader>(0).GetCpuMat();
+            auto& output = data.getOutput<ImageHeader::NativeType, ImageHeader>(0).GetCpuMat();
 
-            image.GetCpuMat().convertTo(output.GetCpuMat(), CV_MAKETYPE(CV_MAT_DEPTH(CV_8UC1), 1),  alpha_,beta_);
+            auto channels = input.channels();
+            auto depth = input.depth();
+            cv::cvtColor(input, output, cv::COLOR_BGRA2GRAY);
+
 
             return true;
         }
 
 
     private:
-        double alpha_;
-        double beta_;
+
 
     RTTR_ENABLE(Component)
 
@@ -102,5 +100,5 @@ RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
 {
 
     using namespace rttr;
-    registration::class_<traact::component::vision::OpenCvConvertImage>("OpenCvConvertImage").constructor<std::string>()();
+    registration::class_<traact::component::vision::OpenCvColorToGray>("OpenCvColorToGray").constructor<std::string>()();
 }

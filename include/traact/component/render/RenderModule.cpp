@@ -39,15 +39,10 @@
 
 static void glfw_error_callback(int error, const char *description)
 {
-    spdlog::error( "Glfw Error {0}: {1}\n", error, description);
+    SPDLOG_ERROR( "Glfw Error {0}: {1}\n", error, description);
 }
 
 bool traact::component::render::RenderModule::init(traact::component::Module::ComponentPtr module_component) {
-    return Module::init(module_component);
-}
-
-bool traact::component::render::RenderModule::start(traact::component::Module::ComponentPtr module_component) {
-
     {
         std::scoped_lock lock(data_lock_);
         if(running_)
@@ -62,13 +57,19 @@ bool traact::component::render::RenderModule::start(traact::component::Module::C
         thread_loop();
     });
 
-    while (init_future.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready) {
+    while (init_future.wait_for(std::chrono::milliseconds(1000)) != std::future_status::ready) {
         if(running_){
-            spdlog::info("RenderModule: waiting for render thread to initialize");
+            SPDLOG_INFO("RenderModule: waiting for render thread to initialize");
         }
     }
 
-    spdlog::info("RenderModule: finished starting");
+    SPDLOG_INFO("RenderModule: finished configure");
+    return true;
+}
+
+bool traact::component::render::RenderModule::start(traact::component::Module::ComponentPtr module_component) {
+
+    SPDLOG_INFO("RenderModule: finished starting");
 
     return true;
 }
@@ -103,7 +104,7 @@ void traact::component::render::RenderModule::thread_loop() {
     glfwSetErrorCallback(glfw_error_callback);
 
     if( !glfwInit() ){
-        spdlog::error("could not initialize glfw");
+        SPDLOG_ERROR("could not initialize glfw");
         return;
     }
 
@@ -126,7 +127,7 @@ void traact::component::render::RenderModule::thread_loop() {
 
     GLFWwindow* window = glfwCreateWindow( 800, 600, "glfw window", nullptr, nullptr );
     if (window == NULL) {
-        spdlog::error("could not create glfw window");
+        SPDLOG_ERROR("could not create glfw window");
         return;
     }
 
@@ -137,7 +138,7 @@ void traact::component::render::RenderModule::thread_loop() {
 
     if (glewInit() != GLEW_OK)
     {
-        spdlog::error("Failed to initialize OpenGL loader!");
+        SPDLOG_ERROR("Failed to initialize OpenGL loader!");
         return;
     }
 
@@ -239,7 +240,7 @@ void traact::component::render::RenderModule::thread_loop() {
 
 
                 if(all_commands.empty()){
-                    spdlog::error("no render events for windows {0}", window_name);
+                    SPDLOG_ERROR("no render events for windows {0}", window_name);
                     continue;
                 }
 
@@ -279,7 +280,7 @@ traact::component::render::RenderModule::RenderModule() : thread_() {
 
 void traact::component::render::RenderModule::setComponentReady(RenderCommand::Ptr render_command) {
     if(render_command->GetMeaIdx() == 0){
-        spdlog::error("Timestamp is 0: {0} {1}", render_command->GetWindowName(), render_command->GetComponentName());
+        SPDLOG_ERROR("Timestamp is 0: {0} {1}", render_command->GetWindowName(), render_command->GetComponentName());
         return;
     }
 
@@ -312,7 +313,7 @@ bool traact::component::render::RenderComponent::configure(const nlohmann::json 
 void traact::component::render::RenderComponent::invalidTimePoint(traact::TimestampType ts, std::size_t mea_idx) {
     //if(ts == TimestampType::min())
     //    return;
-    auto command = std::make_shared<RenderCommand>(window_name_, getName(), mea_idx, priority_);
+    auto command = std::make_shared<RenderCommand>(window_name_, getName(), ts.time_since_epoch().count(), priority_);
     render_module_->setComponentReady(command);
     //releaseAsyncCall(ts);
 }

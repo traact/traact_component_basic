@@ -43,23 +43,23 @@ namespace traact::component::vision {
     class OpenCVUndistortImage : public Component {
     public:
         explicit OpenCVUndistortImage(const std::string &name) : Component(name,
-                                                                           traact::component::ComponentType::Functional) {
+                                                                           traact::component::ComponentType::SyncFunctional) {
         }
 
         traact::pattern::Pattern::Ptr GetPattern()  const {
 
 
-            traact::pattern::spatial::SpatialPattern::Ptr
+            traact::pattern::Pattern::Ptr
                     pattern =
-                    std::make_shared<traact::pattern::spatial::SpatialPattern>("OpenCVUndistortImage", serial);
+                    std::make_shared<traact::pattern::Pattern>("OpenCVUndistortImage", serial);
 
             pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
             pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::MetaType);
             pattern->addProducerPort("output", traact::vision::ImageHeader::MetaType);
             pattern->addProducerPort("output_calibration", traact::vision::CameraCalibrationHeader::MetaType);
 
-            pattern->addCoordianteSystem("ImagePlane")
-                    .addCoordianteSystem("Image", true)
+            pattern->addCoordinateSystem("ImagePlane")
+                    .addCoordinateSystem("Image", true)
                     .addEdge("ImagePlane", "Image", "input")
                     .addEdge("ImagePlane", "Image", "input_calibration")
                     .addEdge("ImagePlane", "Image", "output");
