@@ -31,12 +31,12 @@ class OpenCVVideoCapture : public Component {
 
     bool start() override {
         running_ = true;
-        spdlog::info("starting OpenCV_VideoCapture");
+        SPDLOG_INFO("starting OpenCV_VideoCapture");
         thread_.reset(new std::thread(std::bind(&OpenCVVideoCapture::threadLoop, this)));
         return true;
     }
     bool stop() override {
-        spdlog::info("stopping OpenCV_VideoCapture");
+        SPDLOG_INFO("stopping OpenCV_VideoCapture");
         if (running_) {
             running_ = false;
             thread_->join();
@@ -61,7 +61,7 @@ class OpenCVVideoCapture : public Component {
         cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
 
         if (!cap.isOpened()) {
-            spdlog::error("Cannot open camera");
+            SPDLOG_ERROR("Cannot open camera");
             return;
         }
 
@@ -99,11 +99,11 @@ class OpenCVVideoCapture : public Component {
             if (newData.IsGpu())
               newData.GetGpuMat().upload(image);*/
 
-            spdlog::trace("commit data");
+            SPDLOG_TRACE("commit data");
             buffer->commit(true);
-            spdlog::trace("data commited");
+            SPDLOG_TRACE("data commited");
         }
-        spdlog::trace("source quit loop");
+        SPDLOG_TRACE("source quit loop");
         running_ = false;
     }
  RTTR_ENABLE(Component)

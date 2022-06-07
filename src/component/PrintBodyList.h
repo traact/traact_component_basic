@@ -45,7 +45,7 @@ class PrintBodyList : public traact::DefaultComponent {
 
         }
 
-        spdlog::info("got result for ts: {0}, value: {1}", data.getTimestamp().time_since_epoch().count(), ss.str());
+        SPDLOG_INFO("got result for ts: {0}, value: {1}", data.getTimestamp().time_since_epoch().count(), ss.str());
 
         return true;
 

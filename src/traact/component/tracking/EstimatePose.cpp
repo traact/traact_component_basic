@@ -84,7 +84,7 @@ class EstimatePose : public Component {
                 double length = (points2d[j] - p).norm();
                 if (length < 1) {
                     if (found) {
-                        spdlog::warn("found second match for tracking, abort");
+                        SPDLOG_WARN("found second match for tracking, abort");
                         return false;
                     }
                     candidate_index[i] = j;
@@ -319,7 +319,7 @@ class EstimatePose : public Component {
             return ((lhs.x - rhs.x) * (lhs.x - rhs.x) + (lhs.y - rhs.y) * (lhs.y - rhs.y)) < th2;
         });
 
-        spdlog::info("found labels {0}", n_labels);
+        SPDLOG_INFO("found labels {0}", n_labels);
         std::vector<spatial::Position2DList> labeled_points(n_labels);
         for (int i = 0; i < labels.size(); ++i) {
             labeled_points[labels[i]].push_back(points2d[i]);
@@ -344,7 +344,7 @@ class EstimatePose : public Component {
 //            }
 
         for (const spatial::Position2DList &current_points : labeled_points) {
-            spdlog::info("cluster point count {0}", current_points.size());
+            SPDLOG_INFO("cluster point count {0}", current_points.size());
             if (current_points.size() < points3d.size() || current_points.size() > 8)
                 continue;
 
@@ -415,9 +415,9 @@ class EstimatePose : public Component {
                                             output,
                                             output_points);
             TimeDuration dur2 = now() - ts_start2;
-            spdlog::info("found pose {0} in {1}", result, dur2.count());
+            SPDLOG_INFO("found pose {0} in {1}", result, dur2.count());
             //double factor = static_cast<double>(dur1.count()) / dur2.count();
-            //spdlog::info("found pose {0} {1} in {2} {3} {4}", result1, result2, dur1.count(), dur2.count(), factor);
+            //SPDLOG_INFO("found pose {0} {1} in {2} {3} {4}", result1, result2, dur1.count(), dur2.count(), factor);
 
             //result = result1 || result2;
         }

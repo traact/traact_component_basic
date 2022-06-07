@@ -38,12 +38,12 @@ class Pose6DTestSource : public Component {
 
     bool start() override {
         running_ = true;
-        spdlog::info("starting simple source");
+        SPDLOG_INFO("starting simple source");
         thread_.reset(new std::thread(std::bind(&Pose6DTestSource::threadLoop, this)));
         return true;
     }
     bool stop() override {
-        spdlog::info("stopping simple source");
+        SPDLOG_INFO("stopping simple source");
         if (running_) {
             running_ = false;
             thread_->join();
@@ -74,7 +74,7 @@ class Pose6DTestSource : public Component {
             std::this_thread::sleep_for(deltaTs);
             ts += std::chrono::milliseconds(10);
 
-            spdlog::trace("request buffer");
+            SPDLOG_TRACE("request buffer");
 
             auto buffer_future = request_callback_(ts);
             buffer_future.wait();
@@ -88,15 +88,15 @@ class Pose6DTestSource : public Component {
 
             newData = internal_data_;
 
-            spdlog::trace("commit data");
+            SPDLOG_TRACE("commit data");
             buffer->commit(true);
 
             internal_data_ = internal_data_ * Eigen::Translation3d(0, 0, 1);
             output_count++;
 
-            spdlog::trace("done");
+            SPDLOG_TRACE("done");
         }
-        spdlog::trace("source quit loop");
+        SPDLOG_TRACE("source quit loop");
         running_ = false;
     }
  RTTR_ENABLE(Component)

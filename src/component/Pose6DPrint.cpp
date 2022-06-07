@@ -36,7 +36,7 @@ class Pose6DPrint : public traact::DefaultComponent {
 
         traact::Timestamp ts = data.getTimestamp();
         if (ts < lastTimestamp) {
-            spdlog::warn("current ts: {0} < lastTs: {1}",
+            SPDLOG_WARN("current ts: {0} < lastTs: {1}",
                          ts.time_since_epoch().count(),
                          lastTimestamp.time_since_epoch().count());
         }
@@ -45,7 +45,7 @@ class Pose6DPrint : public traact::DefaultComponent {
         std::stringstream ss;
         ss << input.matrix().format(CleanFmt);
 
-        spdlog::info("{0} ts: {1}, value: \n{2}", "Pose6DPrint", ts.time_since_epoch().count(), ss.str());
+        SPDLOG_INFO("{0} ts: {1}, value: \n{2}", "Pose6DPrint", ts.time_since_epoch().count(), ss.str());
 
         lastTimestamp = ts;
 

@@ -7,14 +7,15 @@
 #ifndef TRAACTMULTI_RENDERMODULE_H
 #define TRAACTMULTI_RENDERMODULE_H
 
-#include <traact/traact.h>
-#include <traact/vision.h>
-#include <traact/spatial.h>
+#include <future>
+#include <imgui.h>
 #include <map>
 #include <queue>
-#include <traact/util/Semaphore.h>
 #include <thread>
-#include <future>
+#include <traact/spatial.h>
+#include <traact/traact.h>
+#include <traact/util/Semaphore.h>
+#include <traact/vision.h>
 
 namespace traact::component::render {
 class RenderComponent;
@@ -60,11 +61,15 @@ class RenderModule : public Module {
 
     void setComponentReady(RenderCommand::Ptr render_command);
 
+    void setImageRenderSize(ImVec2 render_size);
+    std::optional<ImVec2> getImageRenderSize();
+
  private:
     std::mutex data_lock_;
     std::thread thread_;
     std::promise<void> initialized_promise_;
     bool running_{false};
+    std::optional<ImVec2> render_size_{};
     void thread_loop();
 
     std::map<std::string, std::vector<RenderComponent *> > window_components_;

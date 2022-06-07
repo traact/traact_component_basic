@@ -104,6 +104,10 @@ class RenderImage : public RenderComponent {
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.cols, image.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data);
         ImVec2 avail_size = ImGui::GetContentRegionAvail();
+        render_module_->setImageRenderSize(avail_size);
+        //ImVec2 avail_size = ImGui::GetWindowContentRegionMax();
+
+
 
         ImGui::Image(reinterpret_cast<void *>( static_cast<intptr_t>( texture_ )), avail_size);
 

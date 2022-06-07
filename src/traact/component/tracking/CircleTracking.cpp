@@ -104,7 +104,7 @@ class CircleTracking : public Component {
 
 //            for(auto circle : keypoints) {
 //
-//                spdlog::info("found point {0} : {1}", circle.pt.x, circle.pt.y);
+//                SPDLOG_INFO("found point {0} : {1}", circle.pt.x, circle.pt.y);
 //                output.push_back(Eigen::Vector2d(circle.pt.x,circle.pt.y));
 //            }
 
@@ -125,8 +125,8 @@ class CircleTracking : public Component {
 //                        point.x() = circle.pt.x;
 //                        point.y() = circle.pt.y;
 
-                    //spdlog::trace("blob found point {0} : {1}", circle.pt.x, circle.pt.y);
-                    //spdlog::trace("circle found point {0} : {1}", point.x(), point.y());
+                    //SPDLOG_TRACE("blob found point {0} : {1}", circle.pt.x, circle.pt.y);
+                    //SPDLOG_TRACE("circle found point {0} : {1}", point.x(), point.y());
 
 
                 }
@@ -234,7 +234,7 @@ class CircleTracking : public Component {
                 double subX = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / tmp;
                 double subY = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / tmp;
 
-                //spdlog::trace("elipse points {0}", subpixelPoints.size());
+                //SPDLOG_TRACE("elipse points {0}", subpixelPoints.size());
                 cv::RotatedRect ellipse = cv::fitEllipse(subpixelPoints);
                 subX = ellipse.center.x;
                 subY = ellipse.center.y;
@@ -254,7 +254,7 @@ class CircleTracking : public Component {
 //                    }
 //                    errorY = errorY / ySubpixelCenter.size();
 
-                //spdlog::info("found point {0} : {1}", subX, subY);
+                //SPDLOG_INFO("found point {0} : {1}", subX, subY);
                 result.push_back(Eigen::Vector2d(subX, subY));
 
             }

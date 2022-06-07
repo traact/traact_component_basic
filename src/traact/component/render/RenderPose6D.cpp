@@ -66,12 +66,18 @@ class RenderPose6D : public RenderComponent {
         auto win_pos = ImGui::GetWindowPos();
         win_pos.x += vMin.x;
         win_pos.y += vMin.y;
-        auto content_max = ImGui::GetWindowContentRegionMax();
+        auto content_max = ImGui::GetContentRegionAvail();
+        auto image_size = render_module_->getImageRenderSize();
+        if(image_size.has_value()){
+          content_max = image_size.value();
+        }
 
-        double scalex = content_max.x / calibration.width;
-        double scaley = content_max.y / calibration.height;
 
-        Eigen::Vector2d win_offset(win_pos.x, win_pos.y);
+        double scale_x = content_max.x / calibration.width;
+        double scale_y = content_max.y / calibration.height;
+
+        //win_pos.x -= vMin.x;
+        //win_pos.y -= vMin.y;
 
         auto p0 = traact::math::reproject_point(pose, calibration,
                                                 Eigen::Vector3d(0, 0, 0));
@@ -82,25 +88,27 @@ class RenderPose6D : public RenderComponent {
         auto pz = traact::math::reproject_point(pose, calibration,
                                                 Eigen::Vector3d(0, 0, 1));
 
-        ImVec2 p_0(win_pos.x + p0.x() * scalex, win_pos.y + p0.y() * scaley);
+        ImVec2 p_0(win_pos.x + p0.x() * scale_x, win_pos.y + p0.y() * scale_y);
 
         draw_list->AddLine(p_0,
-                           ImVec2(win_pos.x + px.x() * scalex, win_pos.y + px.y() * scaley),
+                           ImVec2(win_pos.x + px.x() * scale_x, win_pos.y + px.y() * scale_y),
                            ImColor(255, 0, 0),
                            2);
         //draw_list->AddDrawCmd();
         draw_list->AddLine(p_0,
-                           ImVec2(win_pos.x + py.x() * scalex, win_pos.y + py.y() * scaley),
+                           ImVec2(win_pos.x + py.x() * scale_x, win_pos.y + py.y() * scale_y),
                            ImColor(0, 255, 0),
                            2);
         //draw_list->AddDrawCmd();
         draw_list->AddLine(p_0,
-                           ImVec2(win_pos.x + pz.x() * scalex, win_pos.y + pz.y() * scaley),
+                           ImVec2(win_pos.x + pz.x() * scale_x, win_pos.y + pz.y() * scale_y),
                            ImColor(0, 0, 255),
                            2);
         //draw_list->AddDrawCmd();
 
-
+        ImGui::Begin("Stats");
+        ImGui::Text("content: %2f %2f",  content_max.x, content_max.y);
+        ImGui::End();
 
     }
 

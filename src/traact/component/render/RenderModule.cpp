@@ -247,6 +247,12 @@ void traact::component::render::RenderModule::setComponentReady(RenderCommand::P
     render_commands_[render_command->GetWindowName()][render_command->GetMeaIdx()].push_back(render_command);
 
 }
+void traact::component::render::RenderModule::setImageRenderSize(ImVec2 render_size) {
+    render_size_ = render_size;
+}
+std::optional<ImVec2> traact::component::render::RenderModule::getImageRenderSize() {
+  return render_size_;
+}
 
 traact::component::render::RenderComponent::RenderComponent(const std::string &name) : ModuleComponent(name,
                                                                                                        ComponentType::SYNC_SINK,
