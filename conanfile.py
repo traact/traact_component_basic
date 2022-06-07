@@ -5,11 +5,11 @@ from conans import ConanFile, CMake, tools
 
 class Traact(ConanFile):
     name = "traact_component_basic"
-    version = "0.0.1"
-    
+    version = "0.1.0"
+
     description = "Basic components for spatial and vision datatypes"
     url = ""
-    license = "BSD 3-Clause"
+    license = "MIT"
     author = "Frieder Pankratz"
 
     short_paths = True
@@ -18,7 +18,7 @@ class Traact(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     compiler = "cppstd"
     keep_imports = True
-    
+
     options = {
         "shared": [True, False],
         "with_tests": [True, False]
@@ -29,15 +29,15 @@ class Traact(ConanFile):
         "with_tests": True,
     }
 
-    exports_sources = "include/*", "src/*", "tests/*", "CMakeLists.txt"
+    exports_sources = "src/*", "tests/*", "CMakeLists.txt"
 
     def requirements(self):
         if self.options.with_tests:
-            self.requires("gtest/1.10.0")
+            self.requires("gtest/[>=1.10.0]")
 
-        self.requires("spdlog/1.8.2")
-        self.requires("traact_spatial/%s@camposs/stable" % self.version)
-        self.requires("traact_vision/%s@camposs/stable" % self.version)
+        self.requires("spdlog/[>=1.8.2]")
+        self.requires("traact_spatial/[>=0.1.0]@camposs/stable")
+        self.requires("traact_vision/[>=0.1.0]@camposs/stable")
         self.requires("imgui/1.83")
         self.requires("glfw/3.3.4")
         self.requires("glew/2.2.0")
@@ -45,7 +45,6 @@ class Traact(ConanFile):
     def imports(self):
         self.copy(src="./res/bindings", pattern="imgui_impl_glfw.*", dst="imgui_bindings", root_package='imgui')
         self.copy(src="./res/bindings", pattern="imgui_impl_opengl3.*", dst="imgui_bindings", root_package='imgui')
-
 
     def _configure_cmake(self):
         cmake = CMake(self)
@@ -77,4 +76,4 @@ class Traact(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = [self.name]
-        #self.cpp_info.libs = tools.collect_libs(self)
+        # self.cpp_info.libs = tools.collect_libs(self)

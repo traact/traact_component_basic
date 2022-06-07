@@ -9,38 +9,37 @@ set(CMAKE_CXX_STANDARD 17)
 set(LIB_HEADERS
 
 
-        include/traact/component/spatial/util/Pose6DTestSource.h
+        src/traact/component/spatial/util/Pose6DTestSource.h
         src/component/MultiplicationComponent.cpp
         src/component/Pose6DTestSource.cpp
         src/component/Pose6DPrint.cpp
-        include/traact/component/facade/SpatialApplicationComponent.cpp
+        src/traact/component/facade/SpatialApplicationComponent.cpp
         src/component/PrintBodyList.h
         src/component/StaticPose.cpp
-        include/traact/component/InversionComponent.cpp
-        include/traact/component/vision/OpenCvColorToGray.cpp
+        src/traact/component/InversionComponent.cpp
+        src/traact/component/vision/OpenCvColorToGray.cpp
 
         src/VisionPlugin.cpp
-        include/traact/component/vision/OpenCVModule.h
-        include/traact/component/vision/OpenCVModule.cpp
-        include/traact/component/vision/OpenCvVideoCapture.cpp
-        include/traact/component/vision/OpenCvWindow.cpp
-        include/traact/component/vision/OpenCVUndistortImage.cpp
-        include/traact/component/vision/SyncOpenCvMultiWindow.cpp
-        include/traact/component/vision/OpenCvConvertImage.cpp
-        include/traact/component/tracking/CircleTracking.cpp
-        include/traact/component/vision/OpenCvPaint2DPositionList.cpp
-        include/traact/component/vision/OpenCVArucoTracker.cpp
-        include/traact/component/tracking/EstimatePose.cpp
-        include/traact/component/vision/DebugWindow.cpp
-        include/traact/component/render/RenderModule.cpp include/traact/component/render/RenderModule.h include/traact/component/render/RenderImage.cpp include/traact/component/render/RenderPosition2DList.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInModule.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInModule.h include/traact/component/featureless_outside_in/FeaturelessOutsideInCameraInput.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInTrackingOutput.cpp
-        include/traact/component/render/RenderPose6D.cpp include/traact/component/vision/OpenCVUndistort2DPoints.cpp include/traact/component/featureless_outside_in/FeaturelessOutsideInTracking.cpp)
+        src/traact/component/vision/OpenCVModule.h
+        src/traact/component/vision/OpenCVModule.cpp
+        src/traact/component/vision/OpenCvVideoCapture.cpp
+        src/traact/component/vision/OpenCvWindow.cpp
+        src/traact/component/vision/OpenCVUndistortImage.cpp
+        src/traact/component/vision/SyncOpenCvMultiWindow.cpp
+        src/traact/component/vision/OpenCvConvertImage.cpp
+        src/traact/component/tracking/CircleTracking.cpp
+        src/traact/component/vision/OpenCvPaint2DPositionList.cpp
+        src/traact/component/tracking/EstimatePose.cpp
+        src/traact/component/vision/DebugWindow.cpp
+        src/traact/component/render/RenderModule.cpp src/traact/component/render/RenderModule.h src/traact/component/render/RenderImage.cpp src/traact/component/render/RenderPosition2DList.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInModule.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInModule.h src/traact/component/featureless_outside_in/FeaturelessOutsideInCameraInput.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInTrackingOutput.cpp
+        src/traact/component/render/RenderPose6D.cpp src/traact/component/vision/OpenCVUndistort2DPoints.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInTracking.cpp)
 
 # rest of source code
 #set(LIB_SOURCES )
 set(IMGUI_BINDING_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.h
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.h
-        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp )
+        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp)
 
 # conan is required hard, library name, version and description are configured from conan
 if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
@@ -59,7 +58,7 @@ if (WITH_COVERAGE)
     add_link_options(-fprofile-arcs -ftest-coverage)
 endif ()
 
-add_compile_options( -fno-gnu-unique )
+add_compile_options(-fno-gnu-unique)
 
 if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
     add_definitions(-DTBB_USE_DEBUG=1)
@@ -76,23 +75,22 @@ add_definitions(-DTBB_PREVIEW_FLOW_GRAPH_NODES=1)
 #set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 #generate_export_header(${CONAN_PACKAGE_NAME} EXPORT_FILE_NAME "../../include/traact/${CONAN_PACKAGE_NAME}_export.h")
 
-if(UNIX)
-    if(APPLE)
+if (UNIX)
+    if (APPLE)
         MESSAGE(STATUS "Building for Macos.")
         add_definitions(-DTRAACT_TARGET_APPLE=1)
-    endif()
+    endif ()
     MESSAGE(STATUS "Building for Unix.")
     add_definitions(-DTRAACT_TARGET_UNIX=1)
-elseif(WIN32)
+elseif (WIN32)
     MESSAGE(STATUS "Building for Windows.")
     add_definitions(-DTRAACT_TARGET_WINDOWS=1)
-endif()
+endif ()
 
 if (MSVC)
     # per default disable extended aligned storage for now on msvc
     add_definitions(-D_DISABLE_EXTENDED_ALIGNED_STORAGE -DHAVE_SNPRINTF)
-endif()
-
+endif ()
 
 
 find_package(imgui CONFIG)
@@ -114,9 +112,7 @@ set_target_properties(${CONAN_PACKAGE_NAME} PROPERTIES VERSION ${CONAN_PACKAGE_V
 #set_target_properties(${CONAN_PACKAGE_NAME} PROPERTIES PUBLIC_HEADER "${LIB_HEADERS}")
 
 target_include_directories(${CONAN_PACKAGE_NAME} PUBLIC
-        $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         ${CONAN_INCLUDE_DIRS_NLOHMANN_JSON}
         )
 target_include_directories(${CONAN_PACKAGE_NAME} PRIVATE
@@ -132,7 +128,7 @@ ENDIF (NOT WIN32)
 install(TARGETS ${CONAN_PACKAGE_NAME}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/traact" # source directory
+install(DIRECTORY "src/traact" # source directory
         DESTINATION "include" # target directory
         FILES_MATCHING # install only matched files
         PATTERN "*.h" # select header files
