@@ -8,7 +8,7 @@ class Traact(ConanFile):
     version = "0.1.0"
 
     description = "Basic components for spatial and vision datatypes"
-    url = ""
+    url = "https://github.com/traact/traact_component_basic.git"
     license = "MIT"
     author = "Frieder Pankratz"
 
@@ -36,8 +36,8 @@ class Traact(ConanFile):
             self.requires("gtest/[>=1.10.0]")
 
         self.requires("spdlog/[>=1.8.2]")
-        self.requires("traact_spatial/[>=0.1.0]@camposs/stable")
-        self.requires("traact_vision/[>=0.1.0]@camposs/stable")
+        self.requires("traact_spatial/[>=0.1.0]@traact/latest")
+        self.requires("traact_vision/[>=0.1.0]@traact/latest")
         self.requires("imgui/1.83")
         self.requires("glfw/3.3.4")
         self.requires("glew/2.2.0")
@@ -76,4 +76,3 @@ class Traact(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = [self.name]
-        # self.cpp_info.libs = tools.collect_libs(self)
