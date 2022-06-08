@@ -100,8 +100,12 @@ class RenderImage : public RenderComponent {
         glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.cols, image.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data);
         ImVec2 avail_size = ImGui::GetContentRegionAvail();
+        if(avail_size.x < 10){
+          avail_size.x = 320;
+          avail_size.y = 180;
+        }
+
         render_module_->setImageRenderSize(avail_size);
-        //ImVec2 avail_size = ImGui::GetWindowContentRegionMax();
 
 
 
