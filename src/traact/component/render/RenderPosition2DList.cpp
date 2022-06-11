@@ -19,11 +19,11 @@ class RenderPosition2DList : public RenderComponent {
     RenderPosition2DList(const std::string &name)
         : RenderComponent(name) {}
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
         using namespace traact::spatial;
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("RenderPosition2DList", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("RenderPosition2DList", Concurrency::SERIAL, ComponentType::SYNC_SINK);
 
         pattern->addConsumerPort("input", Position2DListHeader::MetaType);
         pattern->addStringParameter("window", "invalid");
@@ -31,7 +31,7 @@ class RenderPosition2DList : public RenderComponent {
         return pattern;
     }
 
-    bool processTimePoint(traact::DefaultComponentBuffer &data) override {
+    bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::spatial;
         const auto input = data.getInput<Position2DListHeader>(0);
 
@@ -69,18 +69,13 @@ class RenderPosition2DList : public RenderComponent {
     //std::mutex data_lock_;
 
 
- RTTR_ENABLE(Component, ModuleComponent, RenderComponent)
+
 
 };
+CREATE_TRAACT_COMPONENT_FACTORY(RenderPosition2DList)
 
 }
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::render::RenderPosition2DList>("RenderPosition2DList").constructor<std::string>()();
-}
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::render::RenderPosition2DList)
+END_TRAACT_PLUGIN_REGISTRATION

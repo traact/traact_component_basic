@@ -10,6 +10,6 @@ class FeaturelessOutsideInCamera : public FeaturelessOutsideInComponentInput {
 
  protected:
 
- RTTR_ENABLE(FeaturelessOutsideInComponent)
+
 };
 }

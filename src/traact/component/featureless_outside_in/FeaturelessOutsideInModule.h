@@ -37,7 +37,7 @@ class FeaturelessOutsideInModule : public Module {
  private:
     std::mutex data_lock_;
 
- RTTR_ENABLE(Module)
+
 };
 
 class FeaturelessOutsideInComponent : public ModuleComponent {
@@ -50,7 +50,7 @@ class FeaturelessOutsideInComponent : public ModuleComponent {
 
  protected:
     std::shared_ptr<FeaturelessOutsideInModule> tracking_module_;
- RTTR_ENABLE(ModuleComponent)
+
 };
 
 class FeaturelessOutsideInComponentInput : public FeaturelessOutsideInComponent {
@@ -58,10 +58,10 @@ class FeaturelessOutsideInComponentInput : public FeaturelessOutsideInComponent 
     explicit FeaturelessOutsideInComponentInput(const std::string &name);
 
     virtual void sendResult(spatial::Position2DList data) = 0;
-    void invalidTimePoint(Timestamp ts, size_t mea_idx) override;
+    bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override;
 
  protected:
- RTTR_ENABLE(FeaturelessOutsideInComponent)
+
 };
 
 class FeaturelessOutsideInComponentOutput : public FeaturelessOutsideInComponent {
@@ -69,10 +69,10 @@ class FeaturelessOutsideInComponentOutput : public FeaturelessOutsideInComponent
     explicit FeaturelessOutsideInComponentOutput(const std::string &name);
 
     virtual void sendPose(spatial::Pose6D pose) = 0;
-    void invalidTimePoint(Timestamp ts, size_t mea_idx) override;
+    bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override;
 
  protected:
- RTTR_ENABLE(FeaturelessOutsideInComponent)
+
 };
 
 }

@@ -8,21 +8,20 @@
 #include <thread>
 #include <traact/buffer/SourceComponentBuffer.h>
 
-namespace traact::component::spatial::util {
+namespace traact::component::util {
 class Pose6DTestSource : public Component {
  public:
-    explicit Pose6DTestSource(const std::string &name) : Component(name,
-                                                                   traact::component::ComponentType::ASYNC_SOURCE) {
+    explicit Pose6DTestSource(const std::string &name) : Component(name) {
         internal_data_.setIdentity();
         running_ = false;
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
         using namespace traact::spatial;
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("Pose6DTestSource", Concurrency::UNLIMITED);
+            std::make_shared<traact::pattern::Pattern>("Pose6DTestSource", Concurrency::UNLIMITED, ComponentType::SYNC_SOURCE);
 
         pattern->addProducerPort("output", Pose6DHeader::MetaType);
         pattern->addCoordinateSystem("Origin", false)
@@ -95,7 +94,7 @@ class Pose6DTestSource : public Component {
         SPDLOG_TRACE("source quit loop");
         running_ = false;
     }
- RTTR_ENABLE(Component)
+
 };
 
 }

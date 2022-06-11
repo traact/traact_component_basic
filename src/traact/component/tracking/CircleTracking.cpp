@@ -12,23 +12,23 @@
 #include <traact/vision/SubPixelEdgeDectection.h>
 #include <traact/spatial.h>
 
-namespace traact::component {
+namespace traact::component::tracking {
 
 class CircleTracking : public Component {
  public:
-    explicit CircleTracking(const std::string &name) : Component(name,
-                                                                 traact::component::ComponentType::SYNC_FUNCTIONAL) {
+    using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
+    using OutPortPoints = buffer::PortConfig<spatial::Position2DListHeader, 0>;
+    explicit CircleTracking(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("CircleTracking", Concurrency::UNLIMITED);
+            std::make_shared<traact::pattern::Pattern>("CircleTracking", Concurrency::UNLIMITED,ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
-        //pattern->addConsumerPort("input_16Bit", traact::vision::ImageHeader::MetaType);
-        pattern->addProducerPort("output", traact::spatial::Position2DListHeader::MetaType);
+        pattern->addConsumerPort<InPortImage>("input");
+        pattern->addProducerPort<OutPortPoints>("output");
         pattern->addParameter("threshold", 160, 0, 255)
             .addParameter("filter_area", false)
             .addParameter("area_min", 1.0, 1.0, std::numeric_limits<double>::max())
@@ -54,16 +54,12 @@ class CircleTracking : public Component {
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
-        const auto &image = data.getInput<ImageHeader>(0);
-        const auto &image_cpu = image.GetCpuMat();
+        const auto& image = data.getInput<InPortImage>().getImage();
+
         //const auto& image_16 = data.getInput<ImageHeader::NativeType, ImageHeader>(1);
         //const auto& image_cpu_16 = image_16.GetCpuMat();
-        auto &output = data.getOutput<traact::spatial::Position2DListHeader>(0);
+        auto &output = data.getOutput<OutPortPoints>();
         output.clear();
-
-        //cv::Mat gray;
-
-        //image.GetCpuMat().convertTo(gray, CV_MAKETYPE(CV_MAT_DEPTH(CV_8UC1), 1), 255. / 6000.0);
 
         cv::SimpleBlobDetector::Params params;
 
@@ -91,41 +87,21 @@ class CircleTracking : public Component {
 
         const int maxBlobDetectionPixelError = 0;
         const unsigned char threshold = params.minThreshold;
-        const int maxRadius = image_cpu.cols / 16;
+        const int maxRadius = image.cols / 16;
 
         try {
             cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create(params);
             std::vector<cv::KeyPoint> keypoints;
-            detector->detect(image_cpu, keypoints);
-
-//            for(auto circle : keypoints) {
-//
-//                SPDLOG_INFO("found point {0} : {1}", circle.pt.x, circle.pt.y);
-//                output.push_back(Eigen::Vector2d(circle.pt.x,circle.pt.y));
-//            }
+            detector->detect(image, keypoints);
 
             detectCirclesMethod2(keypoints,
-                                 reinterpret_cast<unsigned char *>(image_cpu.data),
-                                 image_cpu.cols,
+                                 reinterpret_cast<unsigned char *>(image.data),
+                                 image.cols,
                                  maxBlobDetectionPixelError,
                                  threshold,
                                  maxRadius,
                                  output);
 
-            if (keypoints.size() == output.size())
-                for (int i = 0; i < keypoints.size(); ++i) {
-
-                    auto circle = keypoints[i];
-                    auto point = output[i];
-
-//                        point.x() = circle.pt.x;
-//                        point.y() = circle.pt.y;
-
-                    //SPDLOG_TRACE("blob found point {0} : {1}", circle.pt.x, circle.pt.y);
-                    //SPDLOG_TRACE("circle found point {0} : {1}", point.x(), point.y());
-
-
-                }
         } catch (...) {
             return false;
         }
@@ -258,19 +234,15 @@ class CircleTracking : public Component {
 
     }
 
- RTTR_ENABLE(Component)
+
 
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(CircleTracking)
+
 }
 
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::tracking::CircleTracking)
+END_TRAACT_PLUGIN_REGISTRATION
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::CircleTracking>("CircleTracking").constructor<std::string>()();
-}

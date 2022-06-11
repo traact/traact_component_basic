@@ -20,11 +20,11 @@ class RenderPose6D : public RenderComponent {
     RenderPose6D(const std::string &name)
         : RenderComponent(name) {}
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
         using namespace traact::spatial;
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("RenderPose6D", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("RenderPose6D", Concurrency::SERIAL,ComponentType::SYNC_SINK);
 
         pattern->addConsumerPort("input", Pose6DHeader::MetaType);
         pattern->addConsumerPort("input_calibration", vision::CameraCalibrationHeader::MetaType);
@@ -36,7 +36,7 @@ class RenderPose6D : public RenderComponent {
         return pattern;
     }
 
-    bool processTimePoint(traact::DefaultComponentBuffer &data) override {
+    bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::spatial;
         //std::scoped_lock lock(data_lock_);
         auto pose = data.getInput<Pose6DHeader>(0);
@@ -114,18 +114,14 @@ class RenderPose6D : public RenderComponent {
     //std::mutex data_lock_;
 
 
- RTTR_ENABLE(Component, ModuleComponent, RenderComponent)
+
 
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(RenderPose6D)
+
 }
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::render::RenderPose6D>("RenderPose6D").constructor<std::string>()();
-}
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::render::RenderPose6D)
+END_TRAACT_PLUGIN_REGISTRATION

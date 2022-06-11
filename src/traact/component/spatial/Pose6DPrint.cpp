@@ -4,20 +4,20 @@
 #include <traact/traact.h>
 #include "traact/spatial.h"
 #include <rttr/registration>
-namespace traact::component::spatial::util {
+namespace traact::component {
 
-class Pose6DPrint : public traact::DefaultComponent {
+class Pose6DPrint : public traact::component::Component {
  public:
-    explicit Pose6DPrint(const std::string &name) : traact::DefaultComponent(name,
-                                                                             traact::component::ComponentType::SYNC_SINK) {
+    explicit Pose6DPrint(const std::string &name) : traact::component::Component(name) {
         lastTimestamp = traact::Timestamp::min();
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
         using namespace traact::spatial;
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("Pose6DPrint", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("Pose6DPrint", Concurrency::SERIAL,
+                                                       traact::component::ComponentType::SYNC_SINK);
 
         pattern->addConsumerPort("input", Pose6DHeader::MetaType);
 
@@ -26,7 +26,7 @@ class Pose6DPrint : public traact::DefaultComponent {
         return pattern;
     }
 
-    bool processTimePoint(traact::DefaultComponentBuffer &data) override {
+    bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::spatial;
         const auto &input = data.getInput<Pose6DHeader>(0);
 
@@ -51,19 +51,13 @@ class Pose6DPrint : public traact::DefaultComponent {
  protected:
     traact::Timestamp lastTimestamp;
 
- RTTR_ENABLE(Component)
+
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(Pose6DPrint)
+
 }
 
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::spatial::util::Pose6DPrint>("Pose6DPrint").constructor<std::string>()
-        (
-            //policy::ctor::as_std_shared_ptr
-        );
-}
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::Pose6DPrint)
+END_TRAACT_PLUGIN_REGISTRATION

@@ -251,7 +251,6 @@ std::optional<ImVec2> traact::component::render::RenderModule::getImageRenderSiz
 }
 
 traact::component::render::RenderComponent::RenderComponent(const std::string &name) : ModuleComponent(name,
-                                                                                                       ComponentType::SYNC_SINK,
                                                                                                        ModuleType::GLOBAL) {
 
 }
@@ -273,12 +272,10 @@ bool traact::component::render::RenderComponent::configure(const nlohmann::json 
     return ModuleComponent::configure(parameter, data);
 }
 
-void traact::component::render::RenderComponent::invalidTimePoint(traact::Timestamp ts, size_t mea_idx) {
-    //if(ts == Timestamp::min())
-    //    return;
-    auto command = std::make_shared<RenderCommand>(window_name_, getName(), ts.time_since_epoch().count(), priority_);
+bool traact::component::render::RenderComponent::processTimePointWithInvalid(buffer::ComponentBuffer &data) {
+    auto command = std::make_shared<RenderCommand>(window_name_, getName(), data.getTimestamp().time_since_epoch().count(), priority_);
     render_module_->setComponentReady(command);
-    //releaseAsyncCall(ts);
+    return true;
 }
 
 void traact::component::render::RenderCommand::DoRender() {

@@ -11,18 +11,20 @@ namespace traact::component {
 
 class StaticPose : public Component {
  public:
-    explicit StaticPose(const std::string &name) : Component(name, traact::component::ComponentType::SYNC_SOURCE) {
+    using OutPort = buffer::PortConfig<traact::spatial::Pose6DHeader, 0>;
+
+    explicit StaticPose(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         std::string pattern_name = fmt::format("StaticPose");
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>(pattern_name, Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>(pattern_name, Concurrency::SERIAL, ComponentType::SYNC_SOURCE);
 
-        pattern->addProducerPort("output", spatial::Pose6DHeader::MetaType);
+        pattern->addProducerPort<OutPort>("output");
 
         pattern->addParameter("tx", 0);
         pattern->addParameter("ty", 0);
@@ -57,7 +59,7 @@ class StaticPose : public Component {
     }
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
-        auto &output = data.getOutput<spatial::Pose6DHeader>(0);
+        auto &output = data.getOutput<OutPort>();
         output = pose_;
         return true;
     }
@@ -66,16 +68,14 @@ class StaticPose : public Component {
 
     Eigen::Affine3d pose_;
 
- RTTR_ENABLE(Component)
+
 
 };
 
-}
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
+CREATE_TRAACT_COMPONENT_FACTORY(StaticPose)
 
-    using namespace rttr;
-    registration::class_<traact::component::StaticPose>("StaticPose").constructor<std::string>()();
 }
+
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::StaticPose)
+END_TRAACT_PLUGIN_REGISTRATION

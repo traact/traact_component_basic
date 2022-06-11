@@ -7,16 +7,15 @@
 #include <traact/component/vision/BasicVisionPattern.h>
 #include <thread>
 #include <traact/buffer/SourceComponentBuffer.h>
-namespace traact::component::vision {
+namespace traact::component::opencv {
 
 class OpenCVVideoCapture : public Component {
  public:
-    explicit OpenCVVideoCapture(const std::string &name) : Component(name,
-                                                                     traact::component::ComponentType::ASYNC_SOURCE) {
+    explicit OpenCVVideoCapture(const std::string &name) : Component(name) {
         running_ = false;
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern = getUncalibratedCameraPattern();
@@ -79,21 +78,7 @@ class OpenCVVideoCapture : public Component {
             }
             auto &newData = buffer->getOutput<ImageHeader::NativeType, ImageHeader>(0);
 
-            if (!newData.IsCpu() && !newData.IsGpu()) {
-                ImageHeader header;
-                header.width = image.cols;
-                header.height = image.rows;
-                header.opencv_matrix_type = image.type();
-                header.device_id = 0;
-                newData.init(header);
-                //image.copyTo(newData.GetCpuMat());
-                newData.SetCpuMat(image);
-            }
-
-            /*if (newData.IsCpu())
-              image.copyTo(newData.GetCpuMat());
-            if (newData.IsGpu())
-              newData.GetGpuMat().upload(image);*/
+            newData.update(image);
 
             SPDLOG_TRACE("commit data");
             buffer->commit(true);
@@ -102,15 +87,13 @@ class OpenCVVideoCapture : public Component {
         SPDLOG_TRACE("source quit loop");
         running_ = false;
     }
- RTTR_ENABLE(Component)
+
 };
 
-}
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCVVideoCapture)
 
-    using namespace rttr;
-    registration::class_<traact::component::vision::OpenCVVideoCapture>("OpenCVVideoCapture").constructor<std::string>()();
 }
+
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCVVideoCapture)
+END_TRAACT_PLUGIN_REGISTRATION

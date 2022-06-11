@@ -35,7 +35,7 @@ void traact::component::FeaturelessOutsideInModule::setCameraReady(
 
 traact::component::FeaturelessOutsideInComponent::FeaturelessOutsideInComponent(const std::string &name,
                                                                                 traact::component::ComponentType traact_component_type)
-    : ModuleComponent(name, traact_component_type, ModuleType::GLOBAL) {
+    : ModuleComponent(name, ModuleType::GLOBAL) {
 
 }
 
@@ -59,9 +59,9 @@ traact::component::FeaturelessOutsideInComponentInput::FeaturelessOutsideInCompo
 
 }
 
-void
-traact::component::FeaturelessOutsideInComponentInput::invalidTimePoint(traact::Timestamp ts, size_t mea_idx) {
-    this->releaseAsyncCall(ts, false);
+bool
+traact::component::FeaturelessOutsideInComponentInput::processTimePointWithInvalid(buffer::ComponentBuffer &data) {
+    this->releaseAsyncCall(data.getTimestamp(), false);
 }
 
 traact::component::FeaturelessOutsideInComponentOutput::FeaturelessOutsideInComponentOutput(const std::string &name)
@@ -69,15 +69,14 @@ traact::component::FeaturelessOutsideInComponentOutput::FeaturelessOutsideInComp
 
 }
 
-void traact::component::FeaturelessOutsideInComponentOutput::invalidTimePoint(traact::Timestamp ts,
-                                                                              size_t mea_idx) {
-    auto buffer_future = request_callback_(ts);
+bool traact::component::FeaturelessOutsideInComponentOutput::processTimePointWithInvalid(buffer::ComponentBuffer &data) {
+    auto buffer_future = request_callback_(data.getTimestamp());
     buffer_future.wait();
     auto buffer = buffer_future.get();
     if (!buffer) {
-        SPDLOG_WARN("Could not get source buffer for ts {0}", ts.time_since_epoch().count());
-        return;
+        SPDLOG_WARN("Could not get source buffer for ts {0}", data.getTimestamp().time_since_epoch().count());
+        return false;
     }
     buffer->commit(false);
-
+    return true;
 }

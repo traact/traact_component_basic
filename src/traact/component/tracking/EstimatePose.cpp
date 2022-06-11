@@ -13,19 +13,18 @@
 #include <iostream>
 #include <fstream>
 
-namespace traact::component {
+namespace traact::component::tracking {
 
 class EstimatePose : public Component {
  public:
-    explicit EstimatePose(const std::string &name) : Component(name,
-                                                               traact::component::ComponentType::SYNC_FUNCTIONAL) {
+    explicit EstimatePose(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("EstimatePose", Concurrency::UNLIMITED);
+            std::make_shared<traact::pattern::Pattern>("EstimatePose", Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::MetaType);
         pattern->addConsumerPort("input_model", traact::spatial::Position3DListHeader::MetaType);
@@ -433,19 +432,15 @@ class EstimatePose : public Component {
     Eigen::Affine3d prev_pose;
     bool pose_found_{false};
 
- RTTR_ENABLE(Component)
+
 
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(EstimatePose)
+
 }
 
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::tracking::EstimatePose)
+END_TRAACT_PLUGIN_REGISTRATION
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::EstimatePose>("EstimatePose").constructor<std::string>()();
-}

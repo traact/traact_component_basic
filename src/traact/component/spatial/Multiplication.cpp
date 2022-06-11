@@ -4,16 +4,16 @@
 #include "traact/spatial.h"
 #include <rttr/registration>
 
-namespace traact::component::spatial::core {
+namespace traact::component {
 
-class MultiplicationComponent : public Component {
+class Multiplication : public Component {
  public:
-    explicit MultiplicationComponent(const std::string &name) : Component(name, ComponentType::SYNC_FUNCTIONAL) {}
+    explicit Multiplication(const std::string &name) : Component(name) {}
 
-    pattern::Pattern::Ptr GetPattern() const {
+    static pattern::Pattern::Ptr GetPattern(){
         using namespace traact::spatial;
         pattern::Pattern::Ptr
-            pattern = std::make_shared<pattern::Pattern>("MultiplicationComponent", traact::Concurrency::UNLIMITED);
+            pattern = std::make_shared<pattern::Pattern>("MultiplicationComponent", traact::Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort("input0", Pose6DHeader::MetaType)
             .addConsumerPort("input1", Pose6DHeader::MetaType)
@@ -30,7 +30,7 @@ class MultiplicationComponent : public Component {
             pattern;
     };
 
-    bool processTimePoint(DefaultComponentBuffer &data) override {
+    bool processTimePoint(buffer::ComponentBuffer &data) override {
         const auto &input0 = data.getInput<traact::spatial::Pose6DHeader>(0);
         const auto &input1 = data.getInput<traact::spatial::Pose6DHeader>(1);
         auto &output = data.getOutput<traact::spatial::Pose6DHeader>(0);
@@ -40,17 +40,12 @@ class MultiplicationComponent : public Component {
         return true;
     }
 
- RTTR_ENABLE(Component)
+
 };
+CREATE_TRAACT_COMPONENT_FACTORY(Multiplication)
+
 }
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::spatial::core::MultiplicationComponent>("MultiplicationComponent").constructor<
-        std::string>()();
-}
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::Multiplication)
+END_TRAACT_PLUGIN_REGISTRATION

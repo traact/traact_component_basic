@@ -75,7 +75,7 @@ class RenderModule : public Module {
 
     WaitForInit init_lock_;
 
- RTTR_ENABLE(Module)
+
 };
 
 class RenderComponent : public ModuleComponent {
@@ -87,13 +87,13 @@ class RenderComponent : public ModuleComponent {
     virtual void RenderInit() = 0;
     //virtual void Draw(Timestamp ts) = 0;
 
-    void invalidTimePoint(Timestamp ts, size_t mea_idx) override;
+    bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override;
 
  protected:
     std::shared_ptr<RenderModule> render_module_;
     std::string window_name_;
     size_t priority_;
- RTTR_ENABLE(ModuleComponent)
+
 };
 
 template<class T>
@@ -129,7 +129,7 @@ class AsyncRenderComponent : public RenderComponent {
     std::mutex data_lock_;
 
     std::map<Timestamp, const T *> data_;
- RTTR_ENABLE(RenderComponent)
+
 };
 
 }

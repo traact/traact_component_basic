@@ -9,19 +9,18 @@
 #include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
 #include <traact/opencv/OpenCVUtils.h>
-namespace traact::component {
+namespace traact::component::opencv {
 
 class OpenCVUndistort2DPoints : public Component {
  public:
-    explicit OpenCVUndistort2DPoints(const std::string &name) : Component(name,
-                                                                          traact::component::ComponentType::SYNC_FUNCTIONAL) {
+    explicit OpenCVUndistort2DPoints(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCVUndistort2DPoints", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("OpenCVUndistort2DPoints", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::MetaType);
         pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::MetaType);
@@ -76,19 +75,15 @@ class OpenCVUndistort2DPoints : public Component {
     double alpha_;
     double beta_;
 
- RTTR_ENABLE(Component)
+
 
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCVUndistort2DPoints)
+
 }
 
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCVUndistort2DPoints)
+END_TRAACT_PLUGIN_REGISTRATION
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::OpenCVUndistort2DPoints>("OpenCVUndistort2DPoints").constructor<std::string>()();
-}

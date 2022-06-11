@@ -8,26 +8,30 @@
 #include <traact/component/vision/BasicVisionPattern.h>
 #include <traact/vision/UndistortionHelper.h>
 
-namespace traact::component::vision {
+namespace traact::component::opencv {
 
 class OpenCVUndistortImage : public Component {
  public:
-    explicit OpenCVUndistortImage(const std::string &name) : Component(name,
-                                                                       traact::component::ComponentType::SYNC_FUNCTIONAL) {
+    using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
+    using InPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
+    using OutPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
+    using OutPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
+    explicit OpenCVUndistortImage(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCVUndistortImage", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("OpenCVUndistortImage",
+                                                       Concurrency::SERIAL,
+                                                       ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
-        pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::MetaType);
-        pattern->addProducerPort("output", traact::vision::ImageHeader::MetaType);
-        pattern->addProducerPort("output_calibration", traact::vision::CameraCalibrationHeader::MetaType);
-
-        pattern->addCoordinateSystem("ImagePlane")
+        pattern->addConsumerPort<InPortImage>("input")
+            .addConsumerPort<InPortCalibration>("input_calibration")
+            .addProducerPort<OutPortImage>("output")
+            .addProducerPort<OutPortCalibration>("output_calibration")
+            .addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Image", true)
             .addEdge("ImagePlane", "Image", "input")
             .addEdge("ImagePlane", "Image", "input_calibration")
@@ -38,10 +42,14 @@ class OpenCVUndistortImage : public Component {
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
-        const auto &image = data.getInput<ImageHeader>(0);
-        const auto &calibration = data.getInput<CameraCalibrationHeader>(1);
-        auto &output = data.getOutput<ImageHeader>(0);
-        auto &output_calibration = data.getOutput<CameraCalibrationHeader>(1);
+        const auto &image = data.getInput<InPortImage>().getImage();
+        const auto &calibration = data.getInput<InPortCalibration>();
+        const auto &input_header = data.getInputHeader<InPortImage>();
+
+        auto &output = data.getOutput<OutPortImage>().getImage();
+        auto &output_header = data.getOutputHeader<OutPortImage>();
+        output_header.copyFrom(input_header);
+        auto& output_calibration = data.getOutput<OutPortCalibration>();
 
         undistorter_.Init(calibration, true, false, 1);
         output_calibration = undistorter_.GetUndistortedCalibration();
@@ -52,19 +60,13 @@ class OpenCVUndistortImage : public Component {
  private:
     ::traact::vision::UndistortionHelper undistorter_;
 
- RTTR_ENABLE(Component)
-
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCVUndistortImage)
+
 }
 
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCVUndistortImage)
+END_TRAACT_PLUGIN_REGISTRATION
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::vision::OpenCVUndistortImage>("OpenCVUndistortImage").constructor<std::string>()();
-}

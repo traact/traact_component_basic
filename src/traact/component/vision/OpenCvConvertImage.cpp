@@ -7,25 +7,25 @@
 #include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
 
-namespace traact::component::vision {
+namespace traact::component::opencv {
 
 class OpenCvConvertImage : public Component {
  public:
-    explicit OpenCvConvertImage(const std::string &name) : Component(name,
-                                                                     traact::component::ComponentType::SYNC_FUNCTIONAL) {
+    using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
+    using OutPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
+    explicit OpenCvConvertImage(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCvConvertImage", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("OpenCvConvertImage", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
-        pattern->addProducerPort("output", traact::vision::ImageHeader::MetaType);
-
-        pattern->addParameter("alpha", 255.0 / 2000.0);
-        pattern->addParameter("beta", 0);
+        pattern->addConsumerPort<InPortImage>("input")
+        .addProducerPort<OutPortImage>("output")
+        .addParameter("alpha", 255.0 / 2000.0)
+        .addParameter("beta", 0);
 
         pattern->addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Image", true)
@@ -42,11 +42,18 @@ class OpenCvConvertImage : public Component {
     }
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
-        using namespace traact::vision;
-        const auto &image = data.getInput<ImageHeader>(0);
-        auto &output = data.getOutput<ImageHeader>(0);
+        const auto &image = data.getInput<InPortImage>().getImage();
+        const auto &input_header = data.getInputHeader<InPortImage>();
 
-        image.GetCpuMat().convertTo(output.GetCpuMat(), CV_MAKETYPE(CV_MAT_DEPTH(CV_8UC1), 1), alpha_, beta_);
+
+        auto& output = data.getOutput<OutPortImage>().getImage();
+        auto& output_header = data.getOutputHeader<OutPortImage>();
+        output_header.copyFrom(input_header);
+        output_header.pixel_format = vision::PixelFormat::LUMINANCE;
+        output_header.channels = 1;
+        output_header.base_type = BaseType::UINT_8;
+
+        image.convertTo(output, CV_MAKETYPE(CV_MAT_DEPTH(CV_8UC1), 1), alpha_, beta_);
 
         return true;
     }
@@ -55,19 +62,14 @@ class OpenCvConvertImage : public Component {
     double alpha_;
     double beta_;
 
- RTTR_ENABLE(Component)
+
 
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvConvertImage)
+
 }
 
-
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::vision::OpenCvConvertImage>("OpenCvConvertImage").constructor<std::string>()();
-}
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvConvertImage)
+END_TRAACT_PLUGIN_REGISTRATION

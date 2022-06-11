@@ -18,16 +18,17 @@ namespace traact::component::render {
 //class RenderImage : public AsyncRenderComponent<traact::vision::ImageHeader::NativeType> {
 class RenderImage : public RenderComponent {
  public:
+    using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
     RenderImage(const std::string &name)
         : RenderComponent(name) {}
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
         using namespace traact::vision;
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("RenderImage", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("RenderImage", Concurrency::SERIAL, ComponentType::SYNC_SINK);
 
-        pattern->addConsumerPort("input", ImageHeader::MetaType);
+        pattern->addConsumerPort<InPortImage>("input");
         pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("Camera", "ImagePlane", "input");
 
         return pattern;
@@ -54,23 +55,22 @@ class RenderImage : public RenderComponent {
         return ModuleComponent::start();
     }
 
-    bool processTimePoint(traact::DefaultComponentBuffer &data) override {
+    bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
-        const auto& input = data.getInput<ImageHeader>(0);
+        const auto input = data.getInput<InPortImage>().getImage();
 
         auto now_steady = nowSteady();
         std::chrono::duration<double> diff = now_steady - last_ts_;
         last_ts_ = now_steady;
         fps_ = fps_ * 0.6 + 0.4 * 1.0 / diff.count();
 
-        auto input_mat = input.GetCpuMat();
         cv::Mat image;
-        if (input_mat.channels() == 4)
-            image = input_mat.clone();
-        else if (input_mat.channels() == 3)
-            cv::cvtColor(input.GetCpuMat(), image, cv::COLOR_RGB2RGBA);
+        if (input.channels() == 4)
+            image = input.clone();
+        else if (input.channels() == 3)
+            cv::cvtColor(input, image, cv::COLOR_RGB2RGBA);
         else
-            cv::cvtColor(input.GetCpuMat(), image, cv::COLOR_GRAY2RGBA);
+            cv::cvtColor(input, image, cv::COLOR_GRAY2RGBA);
         auto command = std::make_shared<RenderCommand>(window_name_, getName(),
                                                        data.getTimestamp().time_since_epoch().count(), priority_,
                                                        [this, image] { Draw(image); });
@@ -123,18 +123,14 @@ class RenderImage : public RenderComponent {
     TimestampSteady last_ts_{TimestampSteady::min()};
 
 
- RTTR_ENABLE(Component, ModuleComponent, RenderComponent)
+
 
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(RenderImage)
+
 }
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::render::RenderImage>("RenderImage").constructor<std::string>()();
-}
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::render::RenderImage)
+END_TRAACT_PLUGIN_REGISTRATION

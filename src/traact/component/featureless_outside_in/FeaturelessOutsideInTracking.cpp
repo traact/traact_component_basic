@@ -18,15 +18,14 @@ namespace traact::component {
 
 class FeaturelessOutsideInTracking : public Component {
  public:
-    explicit FeaturelessOutsideInTracking(const std::string &name) : Component(name,
-                                                                               traact::component::ComponentType::SYNC_FUNCTIONAL) {
+    explicit FeaturelessOutsideInTracking(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("FeaturelessOutsideInTracking", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("FeaturelessOutsideInTracking", Concurrency::SERIAL,ComponentType::SYNC_SINK);
 
         pattern->addConsumerPort("input_model", traact::spatial::Position3DListHeader::MetaType)
             .addProducerPort("output", traact::spatial::Pose6DHeader::MetaType)
@@ -39,7 +38,7 @@ class FeaturelessOutsideInTracking : public Component {
             .addEdge("Origin", "Target", "output")
             .addEdge("Origin", "TargetPoints", "output_points3d")
 
-            .beginPortGroup("camera_inputs")
+            .beginPortGroup("camera_inputs", 0, 0)
             .addConsumerPort("input_{0}", traact::spatial::Position2DListHeader::MetaType)
             .addConsumerPort("input_camera2world_{0}", traact::spatial::Pose6DHeader::MetaType)
             .addConsumerPort("input_calibration_{0}", traact::vision::CameraCalibrationHeader::MetaType)
@@ -105,20 +104,10 @@ class FeaturelessOutsideInTracking : public Component {
     Eigen::Affine3d prev_pose;
     bool pose_found_{false};
 
- RTTR_ENABLE(Component)
+
 
 };
 
 }
 
 
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::FeaturelessOutsideInTracking>("FeaturelessOutsideInTracking").constructor<
-        std::string>()();
-}

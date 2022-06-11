@@ -8,24 +8,27 @@
 #include <traact/component/vision/BasicVisionPattern.h>
 #include <opencv2/imgproc.hpp>
 
-namespace traact::component::vision {
+namespace traact::component::opencv {
 
 class OpenCvColorToGray : public Component {
  public:
-    explicit OpenCvColorToGray(const std::string &name) : Component(name,
-                                                                    traact::component::ComponentType::SYNC_FUNCTIONAL) {
+    using InPort = buffer::PortConfig<traact::vision::ImageHeader, 0>;
+    using OutPort = buffer::PortConfig<traact::vision::ImageHeader, 0>;
+
+    explicit OpenCvColorToGray(const std::string &name) : Component(name) {
     }
 
-    traact::pattern::Pattern::Ptr GetPattern() const {
+    static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCvColorToGray", Concurrency::SERIAL);
+            std::make_shared<traact::pattern::Pattern>("OpenCvColorToGray",
+                                                       Concurrency::SERIAL,
+                                                       ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", traact::vision::ImageHeader::MetaType);
-        pattern->addProducerPort("output", traact::vision::ImageHeader::MetaType);
-
-        pattern->addCoordinateSystem("ImagePlane")
+        pattern->addConsumerPort<InPort>("input")
+            .addProducerPort<OutPort>("output")
+            .addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Image", true)
             .addEdge("ImagePlane", "Image", "input")
             .addEdge("ImagePlane", "Image", "output");
@@ -38,12 +41,18 @@ class OpenCvColorToGray : public Component {
     }
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
-        using namespace traact::vision;
-        const auto &input = data.getInput<ImageHeader>(0).GetCpuMat();
-        auto &output = data.getOutput<ImageHeader>(0).GetCpuMat();
+        const auto& input = data.getInput<InPort>().getImage();
+        const auto& input_header = data.getInputHeader<InPort>();
 
-        auto channels = input.channels();
-        auto depth = input.depth();
+        auto &output = data.getOutput<OutPort>().getImage();
+        auto & output_header = data.getOutputHeader<InPort>();
+        output_header.width = input_header.width;
+        output_header.height = input_header.height;
+        output_header.stride = input_header.stride;
+        output_header.pixel_format = vision::PixelFormat::LUMINANCE;
+        output_header.channels = 1;
+        output_header.base_type = BaseType::UINT_8;
+
         cv::cvtColor(input, output, cv::COLOR_BGRA2GRAY);
 
         return true;
@@ -51,19 +60,12 @@ class OpenCvColorToGray : public Component {
 
  private:
 
- RTTR_ENABLE(Component)
-
 };
 
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvColorToGray)
+
 }
 
-
-
-// It is not possible to place the macro multiple times in one cpp file. When you compile your plugin with the gcc toolchain,
-// make sure you use the compiler option: -fno-gnu-unique. otherwise the unregistration will not work properly.
-RTTR_PLUGIN_REGISTRATION // remark the different registration macro!
-{
-
-    using namespace rttr;
-    registration::class_<traact::component::vision::OpenCvColorToGray>("OpenCvColorToGray").constructor<std::string>()();
-}
+BEGIN_TRAACT_PLUGIN_REGISTRATION
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvColorToGray)
+END_TRAACT_PLUGIN_REGISTRATION
