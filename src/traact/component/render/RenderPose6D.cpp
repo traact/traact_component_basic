@@ -102,9 +102,6 @@ class RenderPose6D : public RenderComponent {
                            2);
         //draw_list->AddDrawCmd();
 
-        ImGui::Begin("Stats");
-        ImGui::Text("content: %2f %2f",  content_max.x, content_max.y);
-        ImGui::End();
 
     }
 
