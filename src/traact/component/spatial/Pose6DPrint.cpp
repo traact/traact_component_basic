@@ -9,7 +9,7 @@ namespace traact::component {
 class Pose6DPrint : public traact::component::Component {
  public:
     explicit Pose6DPrint(const std::string &name) : traact::component::Component(name) {
-        lastTimestamp = traact::Timestamp::min();
+        lastTimestamp = traact::kTimestampZero;
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {

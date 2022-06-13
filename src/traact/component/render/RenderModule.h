@@ -31,6 +31,7 @@ class RenderCommand {
     [[nodiscard]] const std::string &GetComponentName() const;
     [[nodiscard]] size_t GetMeaIdx() const;
     [[nodiscard]] size_t GetPriority() const;
+    void updateMeaIdxForReuse(size_t new_mea_idx);
  private:
     std::string window_name_;
     std::string component_name_;
@@ -91,6 +92,7 @@ class RenderComponent : public ModuleComponent {
 
  protected:
     std::shared_ptr<RenderModule> render_module_;
+    std::shared_ptr<RenderCommand> latest_command_;
     std::string window_name_;
     size_t priority_;
 

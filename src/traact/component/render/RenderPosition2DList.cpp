@@ -37,10 +37,10 @@ class RenderPosition2DList : public RenderComponent {
 
         //std::scoped_lock lock(data_lock_);
         //data_ = input;
-        auto command = std::make_shared<RenderCommand>(window_name_, getName(),
+        latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
                                                        data.getTimestamp().time_since_epoch().count(), priority_,
                                                        [this, input] { Draw(input); });
-        render_module_->setComponentReady(command);
+        render_module_->setComponentReady(latest_command_);
 
         return true;
 

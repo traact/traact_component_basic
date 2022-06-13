@@ -42,10 +42,10 @@ class RenderPose6D : public RenderComponent {
         auto pose = data.getInput<Pose6DHeader>(0);
         auto calibration = data.getInput<vision::CameraCalibrationHeader>(1);
 
-        auto command = std::make_shared<RenderCommand>(window_name_, getName(),
+        latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
                                                        data.getTimestamp().time_since_epoch().count(), priority_,
                                                        [this, calibration, pose] { Draw(calibration, pose); });
-        render_module_->setComponentReady(command);
+        render_module_->setComponentReady(latest_command_);
 
         return true;
 

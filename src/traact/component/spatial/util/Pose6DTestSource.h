@@ -58,7 +58,7 @@ class Pose6DTestSource : public Component {
     void threadLoop() {
         using namespace traact::spatial;
         using namespace traact;
-        Timestamp ts = traact::Timestamp::min();
+        Timestamp ts = traact::kTimestampZero;
         //Timestamp ts = now();
         TimeDuration deltaTs = std::chrono::milliseconds(10);
 

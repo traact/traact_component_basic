@@ -179,6 +179,8 @@ void traact::component::render::RenderModule::thread_loop() {
                               return a->GetPriority() < b->GetPriority();
                           });
 
+
+
                 current_render_commands_[window_name] = commands;
                 all_commands.erase(mea_idx);
             }
@@ -273,8 +275,18 @@ bool traact::component::render::RenderComponent::configure(const nlohmann::json 
 }
 
 bool traact::component::render::RenderComponent::processTimePointWithInvalid(buffer::ComponentBuffer &data) {
-    auto command = std::make_shared<RenderCommand>(window_name_, getName(), data.getTimestamp().time_since_epoch().count(), priority_);
-    render_module_->setComponentReady(command);
+    // if no data this time step, render last valid time step if available
+    if(latest_command_){
+        latest_command_->updateMeaIdxForReuse(data.getTimestamp().time_since_epoch().count());
+        render_module_->setComponentReady(latest_command_);
+    } else {
+        auto command = std::make_shared<RenderCommand>(window_name_, getName(), data.getTimestamp().time_since_epoch().count(), priority_);
+        render_module_->setComponentReady(command);
+    }
+
+//    auto command = std::make_shared<RenderCommand>(window_name_, getName(), data.getTimestamp().time_since_epoch().count(), priority_);
+//    render_module_->setComponentReady(command);
+
     return true;
 }
 
@@ -317,6 +329,10 @@ traact::component::render::RenderCommand::RenderCommand(std::string window_name,
     component_name_(std::move(component_name)),
     mea_idx_(mea_idx),
     priority_(priority) {
+
+}
+void traact::component::render::RenderCommand::updateMeaIdxForReuse(size_t new_mea_idx) {
+    mea_idx_ = new_mea_idx;
 
 }
 

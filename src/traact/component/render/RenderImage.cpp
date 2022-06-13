@@ -71,11 +71,12 @@ class RenderImage : public RenderComponent {
             cv::cvtColor(input, image, cv::COLOR_RGB2RGBA);
         else
             cv::cvtColor(input, image, cv::COLOR_GRAY2RGBA);
-        auto command = std::make_shared<RenderCommand>(window_name_, getName(),
+        latest_command_  = std::make_shared<RenderCommand>(window_name_, getName(),
                                                        data.getTimestamp().time_since_epoch().count(), priority_,
                                                        [this, image] { Draw(image); });
 
-        render_module_->setComponentReady(command);
+
+        render_module_->setComponentReady(latest_command_);
 
         return true;
 
