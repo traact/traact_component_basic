@@ -27,9 +27,9 @@ class FeaturelessOutsideInTracking : public Component {
             pattern =
             std::make_shared<traact::pattern::Pattern>("FeaturelessOutsideInTracking", Concurrency::SERIAL,ComponentType::SYNC_SINK);
 
-        pattern->addConsumerPort("input_model", traact::spatial::Position3DListHeader::MetaType)
-            .addProducerPort("output", traact::spatial::Pose6DHeader::MetaType)
-            .addProducerPort("output_points3d", traact::spatial::Position3DListHeader::MetaType)
+        pattern->addConsumerPort("input_model", traact::spatial::Position3DListHeader::NativeTypeName)
+            .addProducerPort("output", traact::spatial::Pose6DHeader::NativeTypeName)
+            .addProducerPort("output_points3d", traact::spatial::Position3DListHeader::NativeTypeName)
 
             .addCoordinateSystem("Target")
             .addCoordinateSystem("TargetPoints")
@@ -39,10 +39,10 @@ class FeaturelessOutsideInTracking : public Component {
             .addEdge("Origin", "TargetPoints", "output_points3d")
 
             .beginPortGroup("camera_inputs", 0, 0)
-            .addConsumerPort("input_{0}", traact::spatial::Position2DListHeader::MetaType)
-            .addConsumerPort("input_camera2world_{0}", traact::spatial::Pose6DHeader::MetaType)
-            .addConsumerPort("input_calibration_{0}", traact::vision::CameraCalibrationHeader::MetaType)
-            .addProducerPort("output_points_{0}", traact::spatial::Position2DListHeader::MetaType)
+            .addConsumerPort("input_{0}", traact::spatial::Position2DListHeader::NativeTypeName)
+            .addConsumerPort("input_camera2world_{0}", traact::spatial::Pose6DHeader::NativeTypeName)
+            .addConsumerPort("input_calibration_{0}", traact::vision::CameraCalibrationHeader::NativeTypeName)
+            .addProducerPort("output_points_{0}", traact::spatial::Position2DListHeader::NativeTypeName)
             .addCoordinateSystem("Camera_{0}")
             .addCoordinateSystem("ImagePlane_{0}")
             .addEdge("ImagePlane_{0}", "TargetPoints", "input_{0}")
@@ -56,8 +56,8 @@ class FeaturelessOutsideInTracking : public Component {
         return pattern;
     }
 
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
-        pattern::setValueFromParameter(parameter, "count_cameras", count_cameras_, 2);
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
+        pattern::setValueFromParameter(pattern_instance, "count_cameras", count_cameras_, 2);
 
         cameras_.resize(count_cameras_);
         tracking_.SetCountCameras(count_cameras_);

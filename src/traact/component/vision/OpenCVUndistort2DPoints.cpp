@@ -22,9 +22,9 @@ class OpenCVUndistort2DPoints : public Component {
             pattern =
             std::make_shared<traact::pattern::Pattern>("OpenCVUndistort2DPoints", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::MetaType);
-        pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::MetaType);
-        pattern->addProducerPort("output", traact::spatial::Position2DListHeader::MetaType);
+        pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::NativeTypeName);
+        pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::NativeTypeName);
+        pattern->addProducerPort("output", traact::spatial::Position2DListHeader::NativeTypeName);
 
         pattern->addCoordinateSystem("ImagePlane_Distorted")
             .addCoordinateSystem("ImagePlane_Undistorted")

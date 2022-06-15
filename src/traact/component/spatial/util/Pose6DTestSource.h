@@ -23,7 +23,7 @@ class Pose6DTestSource : public Component {
             pattern =
             std::make_shared<traact::pattern::Pattern>("Pose6DTestSource", Concurrency::UNLIMITED, ComponentType::SYNC_SOURCE);
 
-        pattern->addProducerPort("output", Pose6DHeader::MetaType);
+        pattern->addProducerPort("output", Pose6DHeader::NativeTypeName);
         pattern->addCoordinateSystem("Origin", false)
             .addCoordinateSystem("Target", false)
             .addEdge("Origin", "Target", "output");

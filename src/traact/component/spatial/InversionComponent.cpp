@@ -16,8 +16,8 @@ class Inversion : public Component {
         pattern::Pattern::Ptr
             pattern = std::make_shared<pattern::Pattern>("InversionComponent", Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", Pose6DHeader::MetaType)
-            .addProducerPort("output", Pose6DHeader::MetaType);
+        pattern->addConsumerPort("input", Pose6DHeader::NativeTypeName)
+            .addProducerPort("output", Pose6DHeader::NativeTypeName);
 
         pattern->addCoordinateSystem("A", false)
             .addCoordinateSystem("B", false)

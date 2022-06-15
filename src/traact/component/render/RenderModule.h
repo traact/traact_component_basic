@@ -84,7 +84,7 @@ class RenderComponent : public ModuleComponent {
     explicit RenderComponent(const std::string &name);
     std::string getModuleKey() override;
     Module::Ptr instantiateModule() override;
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override;
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override;
     virtual void RenderInit() = 0;
     //virtual void Draw(Timestamp ts) = 0;
 

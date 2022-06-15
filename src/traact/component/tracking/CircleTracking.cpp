@@ -42,12 +42,12 @@ class CircleTracking : public Component {
         return pattern;
     }
 
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
-        pattern::setValueFromParameter(parameter, "threshold", threshold, threshold);
-        pattern::setValueFromParameter(parameter, "filter_area", filter_area_, filter_area_);
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
+        pattern::setValueFromParameter(pattern_instance, "threshold", threshold, threshold);
+        pattern::setValueFromParameter(pattern_instance, "filter_area", filter_area_, filter_area_);
         if (filter_area_) {
-            pattern::setValueFromParameter(parameter, "area_min", area_min_, area_min_);
-            pattern::setValueFromParameter(parameter, "area_max", area_max_, area_max_);
+            pattern::setValueFromParameter(pattern_instance, "area_min", area_min_, area_min_);
+            pattern::setValueFromParameter(pattern_instance, "area_max", area_max_, area_max_);
         }
         return true;
     }

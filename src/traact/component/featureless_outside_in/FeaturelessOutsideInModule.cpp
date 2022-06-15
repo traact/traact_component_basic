@@ -47,11 +47,11 @@ traact::component::Module::Ptr traact::component::FeaturelessOutsideInComponent:
     return std::make_shared<FeaturelessOutsideInModule>();
 }
 
-bool traact::component::FeaturelessOutsideInComponent::configure(const nlohmann::json &parameter,
+bool traact::component::FeaturelessOutsideInComponent::configure(const pattern::instance::PatternInstance &pattern_instance,
                                                                  traact::buffer::ComponentBufferConfig *data) {
     tracking_module_ = std::dynamic_pointer_cast<FeaturelessOutsideInModule>(module_);
     tracking_module_->addComponent(this);
-    return ModuleComponent::configure(parameter, data);
+    return ModuleComponent::configure(pattern_instance, data);
 }
 
 traact::component::FeaturelessOutsideInComponentInput::FeaturelessOutsideInComponentInput(const std::string &name)

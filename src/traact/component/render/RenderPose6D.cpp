@@ -26,8 +26,8 @@ class RenderPose6D : public RenderComponent {
             pattern =
             std::make_shared<traact::pattern::Pattern>("RenderPose6D", Concurrency::SERIAL,ComponentType::SYNC_SINK);
 
-        pattern->addConsumerPort("input", Pose6DHeader::MetaType);
-        pattern->addConsumerPort("input_calibration", vision::CameraCalibrationHeader::MetaType);
+        pattern->addConsumerPort("input", Pose6DHeader::NativeTypeName);
+        pattern->addConsumerPort("input_calibration", vision::CameraCalibrationHeader::NativeTypeName);
         pattern->addStringParameter("window", "invalid");
         pattern->addCoordinateSystem("Camera").addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Target")

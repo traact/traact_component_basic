@@ -40,16 +40,16 @@ class StaticPose : public Component {
         return pattern;
     }
 
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
         double tx, ty, tz, rx, ry, rz, rw;
-        pattern::setValueFromParameter(parameter, "tx", tx, 0);
-        pattern::setValueFromParameter(parameter, "ty", ty, 0);
-        pattern::setValueFromParameter(parameter, "tz", tz, 0);
+        pattern::setValueFromParameter(pattern_instance, "tx", tx, 0);
+        pattern::setValueFromParameter(pattern_instance, "ty", ty, 0);
+        pattern::setValueFromParameter(pattern_instance, "tz", tz, 0);
 
-        pattern::setValueFromParameter(parameter, "rx", rx, 0);
-        pattern::setValueFromParameter(parameter, "ry", ry, 0);
-        pattern::setValueFromParameter(parameter, "rz", rz, 0);
-        pattern::setValueFromParameter(parameter, "rw", rw, 1);
+        pattern::setValueFromParameter(pattern_instance, "rx", rx, 0);
+        pattern::setValueFromParameter(pattern_instance, "ry", ry, 0);
+        pattern::setValueFromParameter(pattern_instance, "rz", rz, 0);
+        pattern::setValueFromParameter(pattern_instance, "rw", rw, 1);
 
         pose_.setIdentity();
         pose_.translate(Eigen::Vector3d(tx, ty, tz));

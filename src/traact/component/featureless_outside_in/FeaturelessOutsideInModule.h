@@ -46,7 +46,7 @@ class FeaturelessOutsideInComponent : public ModuleComponent {
     virtual ~FeaturelessOutsideInComponent() = default;
     std::string getModuleKey() override;
     Module::Ptr instantiateModule() override;
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override;
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override;
 
  protected:
     std::shared_ptr<FeaturelessOutsideInModule> tracking_module_;

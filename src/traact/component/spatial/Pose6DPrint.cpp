@@ -19,7 +19,7 @@ class Pose6DPrint : public traact::component::Component {
             std::make_shared<traact::pattern::Pattern>("Pose6DPrint", Concurrency::SERIAL,
                                                        traact::component::ComponentType::SYNC_SINK);
 
-        pattern->addConsumerPort("input", Pose6DHeader::MetaType);
+        pattern->addConsumerPort("input", Pose6DHeader::NativeTypeName);
 
         pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("A", "B", "input");
 

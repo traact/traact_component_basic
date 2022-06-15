@@ -15,9 +15,9 @@ class Multiplication : public Component {
         pattern::Pattern::Ptr
             pattern = std::make_shared<pattern::Pattern>("MultiplicationComponent", traact::Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input0", Pose6DHeader::MetaType)
-            .addConsumerPort("input1", Pose6DHeader::MetaType)
-            .addProducerPort("output", Pose6DHeader::MetaType);
+        pattern->addConsumerPort("input0", Pose6DHeader::NativeTypeName)
+            .addConsumerPort("input1", Pose6DHeader::NativeTypeName)
+            .addProducerPort("output", Pose6DHeader::NativeTypeName);
 
         pattern->addCoordinateSystem("A", false)
             .addCoordinateSystem("B", false)

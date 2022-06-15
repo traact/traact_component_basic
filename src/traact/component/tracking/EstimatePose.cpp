@@ -26,12 +26,12 @@ class EstimatePose : public Component {
             pattern =
             std::make_shared<traact::pattern::Pattern>("EstimatePose", Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::MetaType);
-        pattern->addConsumerPort("input_model", traact::spatial::Position3DListHeader::MetaType);
-        pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::MetaType);
+        pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::NativeTypeName);
+        pattern->addConsumerPort("input_model", traact::spatial::Position3DListHeader::NativeTypeName);
+        pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::NativeTypeName);
 
-        pattern->addProducerPort("output", traact::spatial::Pose6DHeader::MetaType);
-        pattern->addProducerPort("output_points", traact::spatial::Position2DListHeader::MetaType);
+        pattern->addProducerPort("output", traact::spatial::Pose6DHeader::NativeTypeName);
+        pattern->addProducerPort("output_points", traact::spatial::Position2DListHeader::NativeTypeName);
 
         pattern->addParameter("maxPointDistance", 150.0);
         pattern->addParameter("minError", 1.0);
@@ -54,11 +54,11 @@ class EstimatePose : public Component {
         return pattern;
     }
 
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
-        pattern::setValueFromParameter(parameter, "maxPointDistance", maxPointDistance_, 100);
-        pattern::setValueFromParameter(parameter, "minError", minError_, 1.0);
-        pattern::setValueFromParameter(parameter, "maxError", maxError_, 1.0);
-        pattern::setValueFromParameter(parameter, "forceZFaceCamera", forceZFaceCamera_, true);
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
+        pattern::setValueFromParameter(pattern_instance, "maxPointDistance", maxPointDistance_, 100);
+        pattern::setValueFromParameter(pattern_instance, "minError", minError_, 1.0);
+        pattern::setValueFromParameter(pattern_instance, "maxError", maxError_, 1.0);
+        pattern::setValueFromParameter(pattern_instance, "forceZFaceCamera", forceZFaceCamera_, true);
 
         return true;
     }

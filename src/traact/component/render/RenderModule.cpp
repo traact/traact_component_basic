@@ -265,13 +265,13 @@ traact::component::Module::Ptr traact::component::render::RenderComponent::insta
     return std::make_shared<RenderModule>();
 }
 
-bool traact::component::render::RenderComponent::configure(const nlohmann::json &parameter,
+bool traact::component::render::RenderComponent::configure(const pattern::instance::PatternInstance &pattern_instance,
                                                            traact::buffer::ComponentBufferConfig *data) {
     render_module_ = std::dynamic_pointer_cast<RenderModule>(module_);
-    pattern::setValueFromParameter(parameter, "window", window_name_, "invalid");
-    pattern::setValueFromParameter(parameter, "priority", priority_, 1);
+    pattern::setValueFromParameter(pattern_instance, "window", window_name_, "invalid");
+    pattern::setValueFromParameter(pattern_instance, "priority", priority_, 1);
     render_module_->addComponent(window_name_, getName(), this, priority_);
-    return ModuleComponent::configure(parameter, data);
+    return ModuleComponent::configure(pattern_instance, data);
 }
 
 bool traact::component::render::RenderComponent::processTimePointWithInvalid(buffer::ComponentBuffer &data) {

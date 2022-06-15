@@ -25,7 +25,7 @@ class RenderPosition2DList : public RenderComponent {
             pattern =
             std::make_shared<traact::pattern::Pattern>("RenderPosition2DList", Concurrency::SERIAL, ComponentType::SYNC_SINK);
 
-        pattern->addConsumerPort("input", Position2DListHeader::MetaType);
+        pattern->addConsumerPort("input", Position2DListHeader::NativeTypeName);
         pattern->addStringParameter("window", "invalid");
         pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("ImagePlane", "Points", "input");
         return pattern;

@@ -34,10 +34,10 @@ class RenderImage : public RenderComponent {
         return pattern;
     }
 
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
         render_module_ = std::dynamic_pointer_cast<RenderModule>(module_);
-        pattern::setValueFromParameter(parameter, "window", window_name_, getName());
-        pattern::setValueFromParameter(parameter, "priority", priority_, 0);
+        pattern::setValueFromParameter(pattern_instance, "window", window_name_, getName());
+        pattern::setValueFromParameter(pattern_instance, "priority", priority_, 0);
         render_module_->addComponent(window_name_, getName(), this, priority_);
 
         //parameter["window"]["value"] = getName();
@@ -52,6 +52,7 @@ class RenderImage : public RenderComponent {
 
     bool start() override {
         last_ts_ = nowSteady();
+        fps_ = 0;
         return ModuleComponent::start();
     }
 
@@ -60,9 +61,11 @@ class RenderImage : public RenderComponent {
         const auto input = data.getInput<InPortImage>().getImage();
 
         auto now_steady = nowSteady();
-        std::chrono::duration<double> diff = now_steady - last_ts_;
+        auto diff = now_steady - last_ts_;
         last_ts_ = now_steady;
-        fps_ = fps_ * 0.6 + 0.4 * 1.0 / diff.count();
+        auto diff_double = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1,1> > >(diff);
+        fps_ = fps_ * 0.9 + 0.1 * 1.0 / diff_double.count();
+        ++valid_count_;
 
         cv::Mat image;
         if (input.channels() == 4)
@@ -80,6 +83,11 @@ class RenderImage : public RenderComponent {
 
         return true;
 
+    }
+
+    virtual bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override {
+        ++invalid_count_;
+        return RenderComponent::processTimePointWithInvalid(data);
     }
 
     void RenderInit() override {
@@ -113,7 +121,7 @@ class RenderImage : public RenderComponent {
         ImGui::Image(reinterpret_cast<void *>( static_cast<intptr_t>( texture_ )), avail_size);
 
         ImGui::Begin("Stats");
-        ImGui::Text("%2f",  fps_);
+        ImGui::Text("%s %d valid: %d invalid: %d", window_name_.c_str(), valid_count_+invalid_count_, valid_count_, invalid_count_);
         ImGui::End();
     }
 
@@ -122,6 +130,8 @@ class RenderImage : public RenderComponent {
     bool init_texture_{false};
     double fps_{0};
     TimestampSteady last_ts_{TimestampSteady::min()};
+    int valid_count_{0};
+    int invalid_count_{0};
 
 
 

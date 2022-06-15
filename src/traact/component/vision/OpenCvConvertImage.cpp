@@ -35,9 +35,9 @@ class OpenCvConvertImage : public Component {
         return pattern;
     }
 
-    bool configure(const nlohmann::json &parameter, buffer::ComponentBufferConfig *data) override {
-        pattern::setValueFromParameter(parameter, "alpha", alpha_, 255.0 / 2000.0);
-        pattern::setValueFromParameter(parameter, "beta", beta_, 0);
+    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
+        pattern::setValueFromParameter(pattern_instance, "alpha", alpha_, 255.0 / 2000.0);
+        pattern::setValueFromParameter(pattern_instance, "beta", beta_, 0);
         return true;
     }
 
