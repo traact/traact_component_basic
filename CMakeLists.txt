@@ -41,7 +41,7 @@ find_package(glew CONFIG)
 
 add_library(${CONAN_PACKAGE_NAME} SHARED
         ${BASIC_COMPONENT_SRC}
-        ${IMGUI_BINDING_SOURCES} )
+        ${IMGUI_BINDING_SOURCES} src/traact/component/render/traact_opengl.h)
 
 target_compile_definitions(${CONAN_PACKAGE_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW)
 

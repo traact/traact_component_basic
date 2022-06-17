@@ -4,7 +4,6 @@
 #define TRAACTMULTI_RENDERMODULE_H
 
 #include <future>
-#include <imgui.h>
 #include <map>
 #include <queue>
 #include <thread>
@@ -12,8 +11,20 @@
 #include <traact/traact.h>
 #include <traact/util/Semaphore.h>
 #include <traact/vision.h>
+#include <traact/util/FpsCounter.h>
+
+#include <imgui.h>
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 namespace traact::component::render {
+
+struct RenderConfiguration {
+    float target_fps;
+};
+
 class RenderComponent;
 
 class RenderCommand {
@@ -53,13 +64,19 @@ class RenderModule : public Module {
 
     bool teardown(ComponentPtr module_component) override;
 
-    size_t addComponent(std::string window_name, const std::string &component_name, RenderComponent *component,
-                        size_t priority);
+    virtual void processTimePoint() override;
 
+    size_t addComponent(std::string window_name,
+                        const std::string &component_name,
+                        RenderComponent *component,
+                        RenderConfiguration render_config = {60.0f});
+
+    void addAdditionalCommand(RenderCommand::Ptr render_command);
     void setComponentReady(RenderCommand::Ptr render_command);
 
     void setImageRenderSize(ImVec2 render_size);
     std::optional<ImVec2> getImageRenderSize();
+
 
  private:
     std::mutex data_lock_;
@@ -67,16 +84,25 @@ class RenderModule : public Module {
     std::promise<void> initialized_promise_;
     bool running_{false};
     std::optional<ImVec2> render_size_{};
+    WaitForInit additional_commands_processed_;
     void thread_loop();
 
     std::map<std::string, std::vector<RenderComponent *> > window_components_;
-    std::map<std::string, std::map<size_t, std::vector<RenderCommand::Ptr> > > render_commands_;
+    std::map<std::string, std::vector<RenderCommand::Ptr> > additional_commands_;
+    std::map<std::string, std::vector<RenderCommand::Ptr> > render_commands_;
     std::map<std::string, std::vector<RenderCommand::Ptr> > current_render_commands_;
+    std::map<std::string, std::vector<RenderCommand::Ptr> > current_additional_commands_;
     std::vector<std::string> all_render_component_names_;
+    util::FpsCounter fps_render_;
+    std::map<std::string, util::FpsCounter> fps_new_data_;
+    //TimestampSteady last_render_timestamp_;
+    TimeDuration target_loop_time_;
+    float render_target_fps_{60};
+
 
     WaitForInit init_lock_;
 
-
+    void updateCurrentRenderCommands();
 };
 
 class RenderComponent : public ModuleComponent {
@@ -95,6 +121,7 @@ class RenderComponent : public ModuleComponent {
     std::shared_ptr<RenderCommand> latest_command_;
     std::string window_name_;
     size_t priority_;
+
 
 };
 

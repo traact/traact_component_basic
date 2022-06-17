@@ -5,14 +5,9 @@
 #include "RenderModule.h"
 #include <rttr/registration>
 
-#include <imgui.h>
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GL/gl.h>
-#include <GLFW/glfw3.h>
 #include <opencv2/imgproc.hpp>
 #include <mutex>
-
+#include "traact_opengl.h"
 namespace traact::component::render {
 
 //class RenderImage : public AsyncRenderComponent<traact::vision::ImageHeader::NativeType> {
@@ -34,19 +29,12 @@ class RenderImage : public RenderComponent {
         return pattern;
     }
 
-    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
+    bool configure(const pattern::instance::PatternInstance &pattern_instance,
+                   buffer::ComponentBufferConfig *data) override {
         render_module_ = std::dynamic_pointer_cast<RenderModule>(module_);
         pattern::setValueFromParameter(pattern_instance, "window", window_name_, getName());
-        pattern::setValueFromParameter(pattern_instance, "priority", priority_, 0);
-        render_module_->addComponent(window_name_, getName(), this, priority_);
-
-        //parameter["window"]["value"] = getName();
-        //RenderComponent::configure(parameter, data);
-
-        //render_module_->addComponent(getName(), getName(), this, 0);
-        //image_ = cv::Mat(64,48,CV_8UC4);
-
-
+        pattern::setValueFromParameter(pattern_instance, "priority", priority_, 1000);
+        render_module_->addComponent(window_name_, getName(), this);
         return true;
     }
 
@@ -58,70 +46,132 @@ class RenderImage : public RenderComponent {
 
     bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
-        const auto input = data.getInput<InPortImage>().getImage();
+
 
         auto now_steady = nowSteady();
         auto diff = now_steady - last_ts_;
         last_ts_ = now_steady;
-        auto diff_double = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1,1> > >(diff);
+        auto diff_double = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1, 1> > >(diff);
         fps_ = fps_ * 0.9 + 0.1 * 1.0 / diff_double.count();
         ++valid_count_;
 
-        cv::Mat image;
-        if (input.channels() == 4)
-            image = input.clone();
-        else if (input.channels() == 3)
-            cv::cvtColor(input, image, cv::COLOR_RGB2RGBA);
-        else
-            cv::cvtColor(input, image, cv::COLOR_GRAY2RGBA);
-        latest_command_  = std::make_shared<RenderCommand>(window_name_, getName(),
-                                                       data.getTimestamp().time_since_epoch().count(), priority_,
-                                                       [this, image] { Draw(image); });
+        auto image_index = data.getTimestamp().time_since_epoch().count();
 
+        render_module_->addAdditionalCommand(std::make_shared<RenderCommand>(
+            window_name_, getName(),
+            image_index, priority_ / 2,
+            [this, &data]()  {
+                uploadImage(data);
+            }));
+
+        latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
+                                                          image_index, priority_,
+                                                          [this, image_index] { draw(image_index); });
 
         render_module_->setComponentReady(latest_command_);
+
+//        if(mapped_image_buffer_ != nullptr){
+//            const auto image = data.getInput<InPortImage>().getImage();
+//            auto image_header = data.getInputHeader<InPortImage>();
+//            auto data_size = image_header.width * image_header.height * image_header.channels;// * getBytes(image_header.base_type);
+//            memcpy(mapped_image_buffer_, image.data, data_size);
+//        }
 
         return true;
 
     }
 
     virtual bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override {
-        ++invalid_count_;
-        return RenderComponent::processTimePointWithInvalid(data);
+        latest_command_->updateMeaIdxForReuse(data.getTimestamp().time_since_epoch().count());
+        render_module_->setComponentReady(latest_command_);
+        return true;
     }
 
     void RenderInit() override {
 
     }
 
-    void Draw(cv::Mat image) {
-        //std::scoped_lock lock(data_lock_);
+    void uploadImage(traact::buffer::ComponentBuffer &data)  {
+        const auto image = data.getInput<InPortImage>().getImage();
+        auto image_header = data.getInputHeader<InPortImage>();
+        SPDLOG_TRACE("{0}: uploadImage {1}", getName(), data.getTimestamp());
 
+        if(data.getTimestamp() < last_image_upload_){
+            SPDLOG_ERROR("image upload of older image last: {0} current: {1}", last_image_upload_, data.getTimestamp());
+        }
+        last_image_upload_ = data.getTimestamp();
+        ++upload_count_;
 
+//        if(mapped_image_buffer_ != nullptr){
+//            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, (index_ + 1) % 2);
+//            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+//        }
+
+        index_ = (index_ + 1) % 2;
+        auto nextIndex = (index_ + 1) % 2;
+
+        auto data_size = image_header.width * image_header.height * image_header.channels;// * getBytes(image_header.base_type);
         if (!init_texture_) {
             glGenTextures(1, &texture_);
+            glBindTexture(GL_TEXTURE_2D, texture_);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_header.width, image_header.height, 0,
+                         getOpenGl(image_header.pixel_format), getOpenGl(image_header.base_type), image.data);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            glGenBuffers(2, pbo_id_);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[0]);
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STREAM_DRAW);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[1]);
+            glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STREAM_DRAW);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
             init_texture_ = true;
         }
-
         glBindTexture(GL_TEXTURE_2D, texture_);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.cols, image.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, image.data);
+        //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[index_]);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, image.data, GL_STREAM_DRAW);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_header.width, image_header.height,
+                        getOpenGl(image_header.pixel_format), GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[nextIndex]);
+        //glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STREAM_DRAW);
+        //glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, image.data, GL_STREAM_DRAW);
+        //mapped_image_buffer_ = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+//        if(mapped_image_buffer_)
+//        {
+//            memcpy(mapped_image_buffer_, image.data, data_size);
+//            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);  // release pointer to mapping buffer
+//        }
+
+
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        //uploadImageOpenGL(texture_, image.data, GL_RGB, image_header);
+
+    }
+
+    void draw(long image_index) {
         ImVec2 avail_size = ImGui::GetContentRegionAvail();
-        if(avail_size.x < 10){
-          avail_size.x = 320;
-          avail_size.y = 180;
+        if (avail_size.x < 10) {
+            avail_size.x = 320;
+            avail_size.y = 180;
         }
 
         render_module_->setImageRenderSize(avail_size);
 
-
-
+        glBindTexture(GL_TEXTURE_2D, texture_);
         ImGui::Image(reinterpret_cast<void *>( static_cast<intptr_t>( texture_ )), avail_size);
 
         ImGui::Begin("Stats");
-        ImGui::Text("%s %d valid: %d invalid: %d", window_name_.c_str(), valid_count_+invalid_count_, valid_count_, invalid_count_);
+        ImGui::Text("%s index: %ld  fps: %f diff: %d",
+                    window_name_.c_str(),
+                    image_index,
+                    fps_,
+                    upload_count_ - valid_count_);
         ImGui::End();
     }
 
@@ -131,10 +181,11 @@ class RenderImage : public RenderComponent {
     double fps_{0};
     TimestampSteady last_ts_{TimestampSteady::min()};
     int valid_count_{0};
-    int invalid_count_{0};
-
-
-
+    int upload_count_{0};
+    Timestamp last_image_upload_{kTimestampZero};
+    GLuint pbo_id_[2];
+    int index_;
+    GLubyte* mapped_image_buffer_{nullptr};
 
 };
 
