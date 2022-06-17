@@ -51,7 +51,7 @@ class Pose6DTestSource : public Component {
     }
 
  private:
-    Eigen::Affine3d internal_data_;
+    traact::spatial::Pose6D internal_data_;
     std::shared_ptr<std::thread> thread_;
     bool running_;
 
@@ -63,7 +63,7 @@ class Pose6DTestSource : public Component {
         TimeDuration deltaTs = std::chrono::milliseconds(10);
 
         int output_count = 0;
-        internal_data_ = internal_data_ * Eigen::Translation3d(0, 0, 1);
+        internal_data_ = internal_data_ * traact::spatial::Translation3D(0, 0, 1);
 
         while (running_ && output_count < 1000) {
             std::this_thread::sleep_for(deltaTs);
@@ -86,7 +86,7 @@ class Pose6DTestSource : public Component {
             SPDLOG_TRACE("commit data");
             buffer->commit(true);
 
-            internal_data_ = internal_data_ * Eigen::Translation3d(0, 0, 1);
+            internal_data_ = internal_data_ * traact::spatial::Translation3D(0, 0, 1);
             output_count++;
 
             SPDLOG_TRACE("done");

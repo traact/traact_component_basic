@@ -127,26 +127,21 @@ void RenderModule::thread_loop() {
     glfwPollEvents();
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-
     for (const auto &window_component : window_components_) {
         std::string window_name = window_component.first;
         for (auto &component : window_component.second) {
-            component->RenderInit();
+            component->renderInit();
         }
     }
-
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     glfwSwapBuffers(window);
 
     bool window_open = true;
-
     initialized_promise_.set_value();
-
     fps_render_.event();
     for (const auto &window : window_components_) {
         fps_new_data_[window.first].event();
@@ -238,6 +233,22 @@ void RenderModule::thread_loop() {
             window_components_.begin()->second.front()->setSourceFinished();
         }
     }
+
+    glfwPollEvents();
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    for (const auto &window_component : window_components_) {
+        std::string window_name = window_component.first;
+        for (auto &component : window_component.second) {
+            component->renderStop();
+        }
+    }
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwSwapBuffers(window);
 
     ImGui_ImplGlfw_Shutdown();
     ImGui_ImplOpenGL3_Shutdown();
@@ -374,6 +385,12 @@ bool RenderComponent::processTimePointWithInvalid(buffer::ComponentBuffer &data)
     render_module_->setComponentReady(command);
 
     return true;
+}
+void RenderComponent::renderInit() {
+
+}
+void RenderComponent::renderStop() {
+
 }
 
 void RenderCommand::DoRender() {

@@ -48,10 +48,43 @@ class OpenCvColorToGray : public Component {
         auto & output_header = data.getOutputHeader<InPort>();
         output_header.width = input_header.width;
         output_header.height = input_header.height;
-        output_header.stride = input_header.stride;
+        output_header.stride = input_header.width;
         output_header.pixel_format = vision::PixelFormat::LUMINANCE;
         output_header.channels = 1;
         output_header.base_type = BaseType::UINT_8;
+
+        auto convert_code = cv::COLOR_RGB2GRAY;
+        switch (input_header.pixel_format) {
+
+
+            case vision::PixelFormat::RGB:{
+                convert_code = cv::COLOR_RGB2GRAY;
+                break;
+            }
+            case vision::PixelFormat::BGR:{
+                convert_code = cv::COLOR_BGR2GRAY;
+                break;
+            }
+            case vision::PixelFormat::RGBA:{
+                convert_code = cv::COLOR_RGBA2GRAY;
+                break;
+            }
+            case vision::PixelFormat::BGRA:{
+                convert_code = cv::COLOR_BGRA2GRAY;
+                break;
+            }
+            case vision::PixelFormat::UNKNOWN_PIXELFORMAT:
+            case vision::PixelFormat::LUMINANCE:
+            case vision::PixelFormat::YUV422:
+            case vision::PixelFormat::YUV411:
+            case vision::PixelFormat::RAW:
+            case vision::PixelFormat::DEPTH:
+            case vision::PixelFormat::FLOAT:
+            case vision::PixelFormat::MJPEG:{
+                SPDLOG_ERROR("unsupported pixel format for color to gray conversion");
+                return false;
+            }
+        }
 
         cv::cvtColor(input, output, cv::COLOR_BGRA2GRAY);
 

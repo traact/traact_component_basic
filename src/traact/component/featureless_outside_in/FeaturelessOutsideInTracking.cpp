@@ -101,7 +101,7 @@ class FeaturelessOutsideInTracking : public Component {
     traact::vision::FLOutsideInTracking tracking_;
     std::vector<traact::vision::TrackingCamera> cameras_;
 
-    Eigen::Affine3d prev_pose;
+    traact::spatial::Pose6D prev_pose;
     bool pose_found_{false};
 
 

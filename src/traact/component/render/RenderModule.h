@@ -111,7 +111,8 @@ class RenderComponent : public ModuleComponent {
     std::string getModuleKey() override;
     Module::Ptr instantiateModule() override;
     bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override;
-    virtual void RenderInit() = 0;
+    virtual void renderInit();
+    virtual void renderStop();
     //virtual void Draw(Timestamp ts) = 0;
 
     bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override;
@@ -125,41 +126,6 @@ class RenderComponent : public ModuleComponent {
 
 };
 
-template<class T>
-class AsyncRenderComponent : public RenderComponent {
- public:
-
-    explicit AsyncRenderComponent(const std::string &name) : RenderComponent(name) {
-
-    };
-
-    void Draw(Timestamp ts) {
-        T *tmp(nullptr);
-
-        {
-            std::scoped_lock lock(data_lock_);
-            auto result = data_.find(ts);
-            if (result != data_.end()) {
-                tmp = result->second;
-                data_.erase(result);
-            }
-        }
-
-        if (tmp) {
-            DrawNow(ts, *tmp);
-            releaseAsyncCall(ts, false);
-        }
-
-    }
-
-    virtual void DrawNow(Timestamp ts, const T &data) = 0;
-
- protected:
-    std::mutex data_lock_;
-
-    std::map<Timestamp, const T *> data_;
-
-};
 
 }
 

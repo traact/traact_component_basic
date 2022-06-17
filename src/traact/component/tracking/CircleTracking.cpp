@@ -227,7 +227,7 @@ class CircleTracking : public Component {
 //                    errorY = errorY / ySubpixelCenter.size();
 
                 //SPDLOG_INFO("found point {0} : {1}", subX, subY);
-                result.push_back(Eigen::Vector2d(subX, subY));
+                result.push_back(Eigen::Vector2<traact::Scalar>(subX, subY));
 
             }
         }

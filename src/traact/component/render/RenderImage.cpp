@@ -87,8 +87,11 @@ class RenderImage : public RenderComponent {
         return true;
     }
 
-    void RenderInit() override {
-
+    virtual void renderStop() override {
+        if(init_texture_){
+            glDeleteTextures(1, &texture_);
+            glDeleteBuffers(1, &pbo_id_);
+        }
     }
 
     void uploadImage(traact::buffer::ComponentBuffer &data)  {
@@ -111,20 +114,16 @@ class RenderImage : public RenderComponent {
         auto nextIndex = (index_ + 1) % 2;
 
         auto data_size = image_header.width * image_header.height * image_header.channels;// * getBytes(image_header.base_type);
+        SPDLOG_INFO("data size: {0}", data_size);
         if (!init_texture_) {
             glGenTextures(1, &texture_);
             glBindTexture(GL_TEXTURE_2D, texture_);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_header.width, image_header.height, 0,
-                         getOpenGl(image_header.pixel_format), getOpenGl(image_header.base_type), image.data);
             glBindTexture(GL_TEXTURE_2D, 0);
 
-            glGenBuffers(2, pbo_id_);
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[0]);
-            glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STREAM_DRAW);
-            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[1]);
+            glGenBuffers(1, &pbo_id_);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_);
             glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STREAM_DRAW);
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
@@ -132,10 +131,12 @@ class RenderImage : public RenderComponent {
         }
         glBindTexture(GL_TEXTURE_2D, texture_);
         //glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[index_]);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_);
         glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, image.data, GL_STREAM_DRAW);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_header.width, image_header.height,
-                        getOpenGl(image_header.pixel_format), GL_UNSIGNED_BYTE, 0);
+//        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image_header.width, image_header.height,
+//                        getOpenGl(image_header.pixel_format), GL_UNSIGNED_BYTE, 0);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image_header.width, image_header.height, 0,
+                     getOpenGl(image_header.pixel_format), getOpenGl(image_header.base_type), 0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         //glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_[nextIndex]);
@@ -183,7 +184,7 @@ class RenderImage : public RenderComponent {
     int valid_count_{0};
     int upload_count_{0};
     Timestamp last_image_upload_{kTimestampZero};
-    GLuint pbo_id_[2];
+    GLuint pbo_id_;
     int index_;
     GLubyte* mapped_image_buffer_{nullptr};
 

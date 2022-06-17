@@ -46,7 +46,7 @@ class RenderPosition2DList : public RenderComponent {
 
     }
 
-    void RenderInit() override {
+    void renderInit() override {
 
     }
 

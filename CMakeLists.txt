@@ -20,7 +20,7 @@ set(BASIC_COMPONENT_SRC
         src/traact/component/vision/OpenCvColorToGray.cpp
 
         src/traact/component/vision/OpenCvVideoCapture.cpp
-        src/traact/component/vision/OpenCVUndistortImage.cpp
+        src/traact/component/vision/OpenCvUndistortImage.cpp
         src/traact/component/vision/OpenCvConvertImage.cpp
         src/traact/component/tracking/CircleTracking.cpp
         src/traact/component/tracking/EstimatePose.cpp
@@ -41,7 +41,7 @@ find_package(glew CONFIG)
 
 add_library(${CONAN_PACKAGE_NAME} SHARED
         ${BASIC_COMPONENT_SRC}
-        ${IMGUI_BINDING_SOURCES} src/traact/component/render/traact_opengl.h)
+        ${IMGUI_BINDING_SOURCES} src/traact/component/render/traact_opengl.h src/traact/component/vision/OpenCvBlobDetection.cpp)
 
 target_compile_definitions(${CONAN_PACKAGE_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW)
 

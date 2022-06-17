@@ -95,6 +95,12 @@ class OpenCvArucoTracker : public Component {
             // there can be only one of this port group
             SPDLOG_TRACE("create debug image");
             auto& output = data.getOutput<OutPortGroupDebug>(debug_port_group_.port_group_index, 0).getImage();
+            auto& output_header = data.getOutputHeader<OutPortGroupDebug>(debug_port_group_.port_group_index, 0);
+            output_header.copyFrom(data.getInputHeader<InPortImage>());
+            output_header.pixel_format = PixelFormat::RGB;
+            output_header.base_type = BaseType::UINT_8;
+            output_header.channels = 3;
+            output_header.stride = output_header.width;
             cv::cvtColor(input_image, output, cv::COLOR_GRAY2RGB);
             cv::aruco::drawDetectedMarkers(output, markers, marker_ids);
         }

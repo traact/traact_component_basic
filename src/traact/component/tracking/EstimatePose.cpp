@@ -72,11 +72,11 @@ class EstimatePose : public Component {
 
         std::vector<size_t> candidate_index(points3d.size());
         for (int i = 0; i < points3d.size(); ++i) {
-            Eigen::Vector2d p = math::reproject_point(prev_pose, calibration, points3d[i]);
+            Eigen::Vector2<traact::Scalar> p = math::reproject_point(prev_pose, calibration, points3d[i]);
 
             bool found = false;
             for (int j = 0; j < points2d.size(); ++j) {
-                double length = (points2d[j] - p).norm();
+                traact::Scalar length = (points2d[j] - p).norm();
                 if (length < 1) {
                     if (found) {
                         SPDLOG_WARN("found second match for tracking, abort");
@@ -91,14 +91,14 @@ class EstimatePose : public Component {
         bool result = false;
 
         spatial::Position2DList cur_image_points(points3d.size());
-        Eigen::Vector2d center = Eigen::Vector2d::Zero();
+        Eigen::Vector2<traact::Scalar> center = Eigen::Vector2<traact::Scalar>::Zero();
         for (int point_index = 0; point_index < points3d.size(); ++point_index) {
             cur_image_points[point_index] = points2d[candidate_index[point_index]];
             center = center + cur_image_points[point_index];
         }
 
-        Eigen::Affine3d pose;
-        double error;
+        traact::spatial::Pose6D pose;
+        traact::Scalar error;
         bool local_result = traact::math::estimate_camera_pose(pose, cur_image_points, calibration, points3d);
         if (local_result) {
             error = traact::math::average_reprojection_error(pose, cur_image_points, calibration, points3d);
@@ -135,16 +135,16 @@ class EstimatePose : public Component {
         std::sort(candidate_index.begin(), candidate_index.end());
         spatial::Position2DList cur_image_points;
         cur_image_points.resize(points3d.size());
-        std::vector<Eigen::Vector2d> final_points;
+        std::vector<Eigen::Vector2<traact::Scalar>> final_points;
         bool result = false;
-        double min_error = std::numeric_limits<double>::max();
+        traact::Scalar min_error = std::numeric_limits<double>::max();
 
         bool endSearch = false;
         size_t num_tests = 0;
 
         do {
             num_tests++;
-            Eigen::Vector2d center = Eigen::Vector2d::Zero();
+            Eigen::Vector2<traact::Scalar> center = Eigen::Vector2<traact::Scalar>::Zero();
             for (int point_index = 0; point_index < points3d.size(); ++point_index) {
                 cur_image_points[point_index] = points2d[candidate_index[point_index]];
                 center = center + cur_image_points[point_index];
@@ -154,7 +154,7 @@ class EstimatePose : public Component {
             center = center / points3d.size();
             bool valid = true;
             for (int point_index = 0; point_index < points3d.size(); ++point_index) {
-                Eigen::Vector2d diff = center - cur_image_points[point_index];
+                Eigen::Vector2<traact::Scalar> diff = center - cur_image_points[point_index];
                 double distance = diff.norm();
                 if (distance > maxPointDistance_)
                     valid = false;
@@ -163,7 +163,7 @@ class EstimatePose : public Component {
             if (!valid)
                 continue;
 
-            Eigen::Affine3d pose;
+            traact::spatial::Pose6D pose;
             bool local_result = traact::math::estimate_camera_pose(pose, cur_image_points, calibration, points3d);
             if (local_result) {
                 double error = traact::math::average_reprojection_error(pose, cur_image_points, calibration, points3d);
@@ -172,9 +172,9 @@ class EstimatePose : public Component {
 
                     if (forceZFaceCamera_) {
                         auto p0 = traact::math::reproject_point(pose, calibration,
-                                                                Eigen::Vector3d(0, 0, 0));
+                                                                Eigen::Vector3<traact::Scalar>(0, 0, 0));
                         auto pz = traact::math::reproject_point(pose, calibration,
-                                                                Eigen::Vector3d(0, 0, 1));
+                                                                Eigen::Vector3<traact::Scalar>(0, 0, 1));
 
                         double diff = p0.y() - pz.y();
                         if (diff < 0)
@@ -392,7 +392,7 @@ class EstimatePose : public Component {
 
         bool result = false;
 
-//            if(!prev_pose.isApprox(Eigen::Affine3d::Identity())) {
+//            if(!prev_pose.isApprox(traact::spatial::Pose6D::Identity())) {
 //                result = tryTracking(data.GetMeaIdx(), points2d, points3d, calibration, output, output_points);
 //            }
 
@@ -429,7 +429,7 @@ class EstimatePose : public Component {
     double minError_;
     double maxError_;
     bool forceZFaceCamera_;
-    Eigen::Affine3d prev_pose;
+    traact::spatial::Pose6D prev_pose;
     bool pose_found_{false};
 
 

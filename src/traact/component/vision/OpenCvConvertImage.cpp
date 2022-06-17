@@ -50,17 +50,16 @@ class OpenCvConvertImage : public Component {
         auto& output_header = data.getOutputHeader<OutPortImage>();
         output_header.copyFrom(input_header);
         output_header.pixel_format = vision::PixelFormat::LUMINANCE;
-        output_header.channels = 1;
         output_header.base_type = BaseType::UINT_8;
 
-        image.convertTo(output, CV_MAKETYPE(CV_MAT_DEPTH(CV_8UC1), 1), alpha_, beta_);
+        image.convertTo(output, CV_8U, alpha_, beta_);
 
         return true;
     }
 
  private:
-    double alpha_;
-    double beta_;
+    traact::Scalar alpha_;
+    traact::Scalar beta_;
 
 
 

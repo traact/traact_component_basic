@@ -5,14 +5,17 @@
 
 #include <traact/traact.h>
 #include <traact/vision.h>
-#include <traact/spatial.h>
-#include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
 #include <traact/opencv/OpenCVUtils.h>
+
 namespace traact::component::opencv {
 
 class OpenCVUndistort2DPoints : public Component {
  public:
+    using InPortPoints = buffer::PortConfig<vision::Position2DListHeader, 0>;
+    using InPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
+    using InPortDesiredCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 2>;
+    using OutPortPoints = buffer::PortConfig<vision::Position2DListHeader, 0>;
     explicit OpenCVUndistort2DPoints(const std::string &name) : Component(name) {
     }
 
@@ -22,9 +25,10 @@ class OpenCVUndistort2DPoints : public Component {
             pattern =
             std::make_shared<traact::pattern::Pattern>("OpenCVUndistort2DPoints", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input", traact::spatial::Position2DListHeader::NativeTypeName);
-        pattern->addConsumerPort("input_calibration", traact::vision::CameraCalibrationHeader::NativeTypeName);
-        pattern->addProducerPort("output", traact::spatial::Position2DListHeader::NativeTypeName);
+        pattern->addConsumerPort<InPortPoints>("input")
+        .addConsumerPort<InPortCalibration>("input_calibration")
+        .addConsumerPort<InPortDesiredCalibration>("input_desired_calibration")
+        .addProducerPort<OutPortPoints>("output");
 
         pattern->addCoordinateSystem("ImagePlane_Distorted")
             .addCoordinateSystem("ImagePlane_Undistorted")
@@ -37,11 +41,11 @@ class OpenCVUndistort2DPoints : public Component {
     }
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
-        using namespace traact::spatial;
         using namespace traact::vision;
-        const auto &input = data.getInput<Position2DListHeader>(0);
-        const auto &calibration = data.getInput<CameraCalibrationHeader>(1);
-        auto &output = data.getOutput<Position2DListHeader>(0);
+        const auto &input = data.getInput<InPortPoints>();
+        const auto &calibration = data.getInput<InPortCalibration>();
+        const auto &desired_calibration = data.getInput<InPortDesiredCalibration>();
+        auto &output = data.getOutput<OutPortPoints>();
 
         output.resize(input.size());
         if (input.empty())
@@ -50,31 +54,22 @@ class OpenCVUndistort2DPoints : public Component {
         cv::Mat cv_intrinsics;
         cv::Mat cv_distortion;
         traact2cv(calibration, cv_intrinsics, cv_distortion);
-        std::vector<cv::Point2f> opencv_points;
 
-        for (auto &point : input) {
-            opencv_points.push_back(eigen2cv(point));
-        }
-        std::vector<cv::Point2f> opencv_points_output(opencv_points.size());
-        cv::undistortPoints(opencv_points,
-                            opencv_points_output,
+        cv::Mat cv_desired_intrinsics;
+        cv::Mat cv_desired_distortion;
+        traact2cv(desired_calibration, cv_desired_intrinsics, cv_desired_distortion);
+
+        output.clear();
+        output.reserve(input.size());
+        cv::undistortPoints(input,
+                            output,
                             cv_intrinsics,
                             cv_distortion,
                             cv::noArray(),
-                            cv_intrinsics);
-
-        for (int i = 0; i < opencv_points_output.size(); ++i) {
-            output[i].x() = opencv_points_output[i].x;
-            output[i].y() = opencv_points_output[i].y;
-        }
+                            cv_desired_intrinsics);
 
         return true;
     }
-
- private:
-    double alpha_;
-    double beta_;
-
 
 
 };

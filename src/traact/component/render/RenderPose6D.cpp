@@ -51,7 +51,7 @@ class RenderPose6D : public RenderComponent {
 
     }
 
-    void RenderInit() override {
+    void renderInit() override {
 
     }
 
@@ -76,13 +76,13 @@ class RenderPose6D : public RenderComponent {
         //win_pos.y -= vMin.y;
 
         auto p0 = traact::math::reproject_point(pose, calibration,
-                                                Eigen::Vector3d(0, 0, 0));
+                                                Eigen::Vector3<traact::Scalar>(0, 0, 0));
         auto px = traact::math::reproject_point(pose, calibration,
-                                                Eigen::Vector3d(1, 0, 0));
+                                                Eigen::Vector3<traact::Scalar>(1, 0, 0));
         auto py = traact::math::reproject_point(pose, calibration,
-                                                Eigen::Vector3d(0, 1, 0));
+                                                Eigen::Vector3<traact::Scalar>(0, 1, 0));
         auto pz = traact::math::reproject_point(pose, calibration,
-                                                Eigen::Vector3d(0, 0, 1));
+                                                Eigen::Vector3<traact::Scalar>(0, 0, 1));
 
         ImVec2 p_0(win_pos.x + p0.x() * scale_x, win_pos.y + p0.y() * scale_y);
 

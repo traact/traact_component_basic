@@ -41,7 +41,7 @@ class StaticPose : public Component {
     }
 
     bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
-        double tx, ty, tz, rx, ry, rz, rw;
+        traact::Scalar tx, ty, tz, rx, ry, rz, rw;
         pattern::setValueFromParameter(pattern_instance, "tx", tx, 0);
         pattern::setValueFromParameter(pattern_instance, "ty", ty, 0);
         pattern::setValueFromParameter(pattern_instance, "tz", tz, 0);
@@ -52,8 +52,8 @@ class StaticPose : public Component {
         pattern::setValueFromParameter(pattern_instance, "rw", rw, 1);
 
         pose_.setIdentity();
-        pose_.translate(Eigen::Vector3d(tx, ty, tz));
-        pose_.rotate(Eigen::Quaterniond(rw, rx, ry, rz));
+        pose_.translate(Eigen::Vector3<Scalar>(tx, ty, tz));
+        pose_.rotate(Eigen::Quaternion<Scalar >(rw, rx, ry, rz));
 
         return true;
     }
@@ -66,7 +66,7 @@ class StaticPose : public Component {
 
  protected:
 
-    Eigen::Affine3d pose_;
+    traact::spatial::Pose6D pose_;
 
 
 
