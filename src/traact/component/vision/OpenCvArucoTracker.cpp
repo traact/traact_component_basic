@@ -69,7 +69,7 @@ class OpenCvArucoTracker : public Component {
         const auto& pose_groups = pattern_instance.port_groups_[pose_port_group_.port_group_index];
         for (const auto& port_group_instance : pose_groups) {
             int marker_id;
-            port_group_instance->setValueFromParameter("MarkerId", marker_id, 0);
+            port_group_instance->setValueFromParameter("MarkerId", marker_id);
             marker_id_to_port_group_.emplace(marker_id, port_group_instance->port_group_instance_index);
         }
 

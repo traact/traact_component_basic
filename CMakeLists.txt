@@ -22,10 +22,10 @@ set(BASIC_COMPONENT_SRC
         src/traact/component/vision/OpenCvVideoCapture.cpp
         src/traact/component/vision/OpenCvUndistortImage.cpp
         src/traact/component/vision/OpenCvConvertImage.cpp
-        src/traact/component/tracking/CircleTracking.cpp
-        src/traact/component/tracking/EstimatePose.cpp
-        src/traact/component/render/RenderModule.cpp src/traact/component/render/RenderModule.h src/traact/component/render/RenderImage.cpp src/traact/component/render/RenderPosition2DList.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInModule.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInModule.h src/traact/component/featureless_outside_in/FeaturelessOutsideInCameraInput.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInTrackingOutput.cpp
-        src/traact/component/render/RenderPose6D.cpp src/traact/component/vision/OpenCVUndistort2DPoints.cpp src/traact/component/featureless_outside_in/FeaturelessOutsideInTracking.cpp
+        src/traact/component/tracking/RefineCircles.cpp
+        src/traact/component/tracking/BruteForceEstimatePose.cpp
+        src/traact/component/render/RenderModule.cpp src/traact/component/render/RenderModule.h src/traact/component/render/RenderImage.cpp src/traact/component/render/RenderPosition2DList.cpp
+        src/traact/component/render/RenderPose6D.cpp src/traact/component/vision/OpenCVUndistort2DPoints.cpp
         src/traact/component/tracking/OutsideInPoseEstimation.cpp
         src/traact/component/spatial/Pose6DPrint.cpp)
 
@@ -41,7 +41,7 @@ find_package(glew CONFIG)
 
 add_library(${CONAN_PACKAGE_NAME} SHARED
         ${BASIC_COMPONENT_SRC}
-        ${IMGUI_BINDING_SOURCES} src/traact/component/render/traact_opengl.h src/traact/component/vision/OpenCvBlobDetection.cpp)
+        ${IMGUI_BINDING_SOURCES} src/traact/component/render/traact_opengl.h src/traact/component/vision/OpenCvBlobDetection.cpp src/traact/component/render/RenderKeyPointList.cpp src/traact/component/render/RenderModuleComponent.cpp src/traact/component/render/RenderModuleComponent.h)
 
 target_compile_definitions(${CONAN_PACKAGE_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW)
 

@@ -24,7 +24,7 @@ class OpenCvUndistortImage : public Component {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCVUndistortImage",
+            std::make_shared<traact::pattern::Pattern>("OpenCvUndistortImage",
                                                        Concurrency::SERIAL,
                                                        ComponentType::SYNC_FUNCTIONAL);
 
@@ -46,9 +46,9 @@ class OpenCvUndistortImage : public Component {
 
     virtual bool configure(const pattern::instance::PatternInstance &pattern_instance,
                            buffer::ComponentBufferConfig *data) override {
-        pattern_instance.setValueFromParameter("OptimizeIntrinsics", optimize_intrinsics_, false);
-        pattern_instance.setValueFromParameter("CenterPrinciplePoint", center_principle_point_, false);
-        pattern_instance.setValueFromParameter("Alpha", alpha_, 1.0);
+        pattern_instance.setValueFromParameter("OptimizeIntrinsics", optimize_intrinsics_);
+        pattern_instance.setValueFromParameter("CenterPrinciplePoint", center_principle_point_);
+        pattern_instance.setValueFromParameter("Alpha", alpha_);
         return true;
     }
 

@@ -1,6 +1,7 @@
 /** Copyright (C) 2022  Frieder Pankratz <frieder.pankratz@gmail.com> **/
 
 #include "RenderModule.h"
+#include "RenderModuleComponent.h"
 
 namespace traact::component::render {
 
@@ -23,7 +24,7 @@ bool RenderModule::init(Module::ComponentPtr module_component) {
 
     std::shared_future<void> init_future(initialized_promise_.get_future());
     thread_ = std::thread([this] {
-        thread_loop();
+        threadLoop();
     });
 
     while (init_future.wait_for(std::chrono::milliseconds(1000)) != std::future_status::ready) {
@@ -68,10 +69,13 @@ RenderModule::addComponent(std::string window_name,
 
     window_components_[window_name].push_back(component);
     all_render_component_names_.push_back(component_name);
+    render_size_[window_name] = {};
+    image_size_[window_name] = {};
+    camera_calibration_[window_name] = {};
 
 }
 
-void RenderModule::thread_loop() {
+void RenderModule::threadLoop() {
 
     glfwSetErrorCallback(glfw_error_callback);
 
@@ -124,6 +128,7 @@ void RenderModule::thread_loop() {
     ImGui_ImplOpenGL3_Init(glsl_version);
     ImGui::StyleColorsDark();
 
+    SPDLOG_DEBUG("call render component renderInit");
     glfwPollEvents();
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -141,12 +146,14 @@ void RenderModule::thread_loop() {
     glfwSwapBuffers(window);
 
     bool window_open = true;
+
     initialized_promise_.set_value();
+
     fps_render_.event();
     for (const auto &window : window_components_) {
         fps_new_data_[window.first].event();
     }
-
+    SPDLOG_DEBUG("start render loop");
     while (running_) {
 
         auto render_start = nowSteady();
@@ -229,9 +236,10 @@ void RenderModule::thread_loop() {
             SPDLOG_TRACE("render sleep total {0}", (after_sleep - render_end).count());
         }
 
-        if (!window_open) {
-            window_components_.begin()->second.front()->setSourceFinished();
-        }
+//        if (!window_open) {
+//            window_components_.begin()->second.front()->setSourceFinished();
+//        }
+        SPDLOG_DEBUG("render loop finished");
     }
 
     glfwPollEvents();
@@ -328,12 +336,14 @@ void RenderModule::setComponentReady(RenderCommand::Ptr render_command) {
         render_commands_[render_command->GetWindowName()].push_back(render_command);
     }
 }
-void RenderModule::setImageRenderSize(ImVec2 render_size) {
-    render_size_ = render_size;
+void RenderModule::setImageRenderSize(ImVec2 render_size, const std::string &window) {
+    render_size_[window] = render_size;
 }
-std::optional<ImVec2> RenderModule::getImageRenderSize() {
-    return render_size_;
+
+const std::optional<ImVec2> & RenderModule::getImageRenderSize(const std::string &window) const{
+    return render_size_.at(window);
 }
+
 void RenderModule::addAdditionalCommand(RenderCommand::Ptr render_command) {
     {
         std::scoped_lock lock(data_lock_);
@@ -354,43 +364,18 @@ void RenderModule::processTimePoint() {
     auto end = nowSteady();
     SPDLOG_DEBUG("update current render commands: done in {0}", end - start);
 }
-
-RenderComponent::RenderComponent(const std::string &name) : ModuleComponent(name,
-                                                                            ModuleType::GLOBAL) {
-
+void RenderModule::setCameraCalibration(const vision::CameraCalibration &camera_calibration,
+                                        const std::string &window) {
+    camera_calibration_[window] = camera_calibration;
 }
-
-std::string RenderComponent::getModuleKey() {
-    return "GlobalRenderModule";
+const std::optional<vision::CameraCalibration> &RenderModule::getCameraCalibration(const std::string &window) const {
+    return camera_calibration_.at(window);
 }
-
-Module::Ptr RenderComponent::instantiateModule() {
-    return std::make_shared<RenderModule>();
+void RenderModule::setImageSize(ImVec2 image_size, const std::string &window) {
+    image_size_[window] = image_size;
 }
-
-bool RenderComponent::configure(const pattern::instance::PatternInstance &pattern_instance,
-                                buffer::ComponentBufferConfig *data) {
-    render_module_ = std::dynamic_pointer_cast<RenderModule>(module_);
-    pattern::setValueFromParameter(pattern_instance, "window", window_name_, "invalid");
-    pattern::setValueFromParameter(pattern_instance, "priority", priority_, 2000);
-    render_module_->addComponent(window_name_, getName(), this);
-    return ModuleComponent::configure(pattern_instance, data);
-}
-
-bool RenderComponent::processTimePointWithInvalid(buffer::ComponentBuffer &data) {
-    auto command = std::make_shared<RenderCommand>(window_name_,
-                                                   getName(),
-                                                   data.getTimestamp().time_since_epoch().count(),
-                                                   priority_);
-    render_module_->setComponentReady(command);
-
-    return true;
-}
-void RenderComponent::renderInit() {
-
-}
-void RenderComponent::renderStop() {
-
+const std::optional<ImVec2> &RenderModule::getImageSize(const std::string &window) const {
+    return image_size_.at(window);
 }
 
 void RenderCommand::DoRender() {

@@ -17,10 +17,10 @@ namespace traact::component {
 
 class OutsideInPoseEstimation : public Component {
  public:
-    using InPort_Model = buffer::PortConfig<traact::spatial::Position3DListHeader, 0>;
+    using InPort_Model = buffer::PortConfig<traact::vision::Position3DListHeader, 0>;
 
     using InPortGroupInputs_Pose = buffer::PortConfig<traact::spatial::Pose6DHeader, 0>;
-    using InPortGroupInputs_Points = buffer::PortConfig<traact::spatial::Position2DListHeader, 1>;
+    using InPortGroupInputs_Points = buffer::PortConfig<traact::vision::Position2DListHeader, 1>;
     using InPortGroupInputs_Calibration = buffer::PortConfig<traact::vision::CameraCalibrationHeader, 2>;
 
     using OutPort_Pose = buffer::PortConfig<traact::spatial::Pose6DHeader, 0>;

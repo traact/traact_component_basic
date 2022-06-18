@@ -2,20 +2,13 @@
 
 #include <traact/traact.h>
 #include <traact/vision.h>
-#include "RenderModule.h"
-#include <rttr/registration>
-
-#include <imgui.h>
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GL/gl.h>
-#include <GLFW/glfw3.h>
-#include <mutex>
+#include "RenderModuleComponent.h"
 
 namespace traact::component::render {
 
 class RenderPosition2DList : public RenderComponent {
  public:
+    using InPortPoints = buffer::PortConfig<vision::Position2DListHeader, 0>;
     RenderPosition2DList(const std::string &name)
         : RenderComponent(name) {}
 
@@ -25,18 +18,18 @@ class RenderPosition2DList : public RenderComponent {
             pattern =
             std::make_shared<traact::pattern::Pattern>("RenderPosition2DList", Concurrency::SERIAL, ComponentType::SYNC_SINK);
 
-        pattern->addConsumerPort("input", Position2DListHeader::NativeTypeName);
-        pattern->addStringParameter("window", "invalid");
+        pattern->addConsumerPort<InPortPoints>("input")
+            .addStringParameter("Window", "RenderWindow")
+            .addParameter("Priority", 2000);
+
         pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("ImagePlane", "Points", "input");
         return pattern;
     }
 
     bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::spatial;
-        const auto input = data.getInput<Position2DListHeader>(0);
+        const auto input = data.getInput<InPortPoints>();
 
-        //std::scoped_lock lock(data_lock_);
-        //data_ = input;
         latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
                                                        data.getTimestamp().time_since_epoch().count(), priority_,
                                                        [this, input] { Draw(input); });
@@ -46,11 +39,7 @@ class RenderPosition2DList : public RenderComponent {
 
     }
 
-    void renderInit() override {
-
-    }
-
-    void Draw(spatial::Position2DList data) {
+    void Draw(vision::Position2DList data) {
         //std::scoped_lock lock(data_lock_);
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
         ImVec2 vMin = ImGui::GetWindowContentRegionMin();
@@ -59,13 +48,13 @@ class RenderPosition2DList : public RenderComponent {
         win_pos.y += vMin.y + 0.5f;
 
         for (const auto &point : data) {
-            draw_list->AddCircle(ImVec2(win_pos.x + point.x(), win_pos.y + point.y()), 5, ImColor(255, 0, 0));
+            draw_list->AddCircle(ImVec2(win_pos.x + point.x, win_pos.y + point.y), 5, ImColor(255, 0, 0));
         }
 
     }
 
  private:
-    //spatial::Position2DList data_;
+    //vision::Position2DList data_;
     //std::mutex data_lock_;
 
 

@@ -13,7 +13,9 @@
 #include <traact/vision.h>
 #include <traact/util/FpsCounter.h>
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
+#include <imgui_internal.h>
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GL/glew.h>
@@ -64,7 +66,7 @@ class RenderModule : public Module {
 
     bool teardown(ComponentPtr module_component) override;
 
-    virtual void processTimePoint() override;
+    void processTimePoint() override;
 
     size_t addComponent(std::string window_name,
                         const std::string &component_name,
@@ -74,8 +76,12 @@ class RenderModule : public Module {
     void addAdditionalCommand(RenderCommand::Ptr render_command);
     void setComponentReady(RenderCommand::Ptr render_command);
 
-    void setImageRenderSize(ImVec2 render_size);
-    std::optional<ImVec2> getImageRenderSize();
+    void setImageRenderSize(ImVec2 render_size, const std::string &window);
+    void setImageSize(ImVec2 image_size, const std::string &window);
+    void setCameraCalibration(const vision::CameraCalibration &camera_calibration, const std::string &window);
+    const std::optional<ImVec2> &getImageRenderSize(const std::string &window) const;
+    const std::optional<ImVec2> &getImageSize(const std::string &window) const;
+    const std::optional<vision::CameraCalibration>& getCameraCalibration(const std::string &window) const;
 
 
  private:
@@ -83,9 +89,13 @@ class RenderModule : public Module {
     std::thread thread_;
     std::promise<void> initialized_promise_;
     bool running_{false};
-    std::optional<ImVec2> render_size_{};
     WaitForInit additional_commands_processed_;
-    void thread_loop();
+
+    std::map<std::string, std::optional<ImVec2>> render_size_{};
+    std::map<std::string, std::optional<ImVec2>> image_size_{};
+    std::map<std::string,std::optional<vision::CameraCalibration>> camera_calibration_{};
+
+    void threadLoop();
 
     std::map<std::string, std::vector<RenderComponent *> > window_components_;
     std::map<std::string, std::vector<RenderCommand::Ptr> > additional_commands_;
@@ -105,26 +115,7 @@ class RenderModule : public Module {
     void updateCurrentRenderCommands();
 };
 
-class RenderComponent : public ModuleComponent {
- public:
-    explicit RenderComponent(const std::string &name);
-    std::string getModuleKey() override;
-    Module::Ptr instantiateModule() override;
-    bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override;
-    virtual void renderInit();
-    virtual void renderStop();
-    //virtual void Draw(Timestamp ts) = 0;
 
-    bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override;
-
- protected:
-    std::shared_ptr<RenderModule> render_module_;
-    std::shared_ptr<RenderCommand> latest_command_;
-    std::string window_name_;
-    size_t priority_;
-
-
-};
 
 
 }

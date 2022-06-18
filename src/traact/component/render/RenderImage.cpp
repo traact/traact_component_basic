@@ -2,12 +2,11 @@
 
 #include <traact/traact.h>
 #include <traact/vision.h>
-#include "RenderModule.h"
-#include <rttr/registration>
+#include "RenderModuleComponent.h"
 
 #include <opencv2/imgproc.hpp>
-#include <mutex>
 #include "traact_opengl.h"
+
 namespace traact::component::render {
 
 //class RenderImage : public AsyncRenderComponent<traact::vision::ImageHeader::NativeType> {
@@ -23,6 +22,9 @@ class RenderImage : public RenderComponent {
             pattern =
             std::make_shared<traact::pattern::Pattern>("RenderImage", Concurrency::SERIAL, ComponentType::SYNC_SINK);
 
+        pattern->addStringParameter("Window", "RenderWindow")
+        .addParameter("Priority", 1000);
+
         pattern->addConsumerPort<InPortImage>("input");
         pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("Camera", "ImagePlane", "input");
 
@@ -32,10 +34,10 @@ class RenderImage : public RenderComponent {
     bool configure(const pattern::instance::PatternInstance &pattern_instance,
                    buffer::ComponentBufferConfig *data) override {
         render_module_ = std::dynamic_pointer_cast<RenderModule>(module_);
-        pattern::setValueFromParameter(pattern_instance, "window", window_name_, getName());
-        pattern::setValueFromParameter(pattern_instance, "priority", priority_, 1000);
+        pattern::setValueFromParameter(pattern_instance, "Window", window_name_, getName());
+        pattern::setValueFromParameter(pattern_instance, "Priority", priority_, 1000);
         render_module_->addComponent(window_name_, getName(), this);
-        return true;
+        return module_->init(this);
     }
 
     bool start() override {
@@ -113,8 +115,7 @@ class RenderImage : public RenderComponent {
         index_ = (index_ + 1) % 2;
         auto nextIndex = (index_ + 1) % 2;
 
-        auto data_size = image_header.width * image_header.height * image_header.channels;// * getBytes(image_header.base_type);
-        SPDLOG_INFO("data size: {0}", data_size);
+        auto data_size = image_header.width * image_header.height * image_header.channels * getBytes(image_header.base_type);
         if (!init_texture_) {
             glGenTextures(1, &texture_);
             glBindTexture(GL_TEXTURE_2D, texture_);
@@ -126,6 +127,8 @@ class RenderImage : public RenderComponent {
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo_id_);
             glBufferData(GL_PIXEL_UNPACK_BUFFER, data_size, 0, GL_STREAM_DRAW);
             glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+            render_module_->setImageSize(ImVec2(image_header.width, image_header.height), window_name_);
 
             init_texture_ = true;
         }
@@ -162,18 +165,18 @@ class RenderImage : public RenderComponent {
             avail_size.y = 180;
         }
 
-        render_module_->setImageRenderSize(avail_size);
+        render_module_->setImageRenderSize(avail_size, window_name_);
 
         glBindTexture(GL_TEXTURE_2D, texture_);
         ImGui::Image(reinterpret_cast<void *>( static_cast<intptr_t>( texture_ )), avail_size);
 
-        ImGui::Begin("Stats");
-        ImGui::Text("%s index: %ld  fps: %f diff: %d",
-                    window_name_.c_str(),
-                    image_index,
-                    fps_,
-                    upload_count_ - valid_count_);
-        ImGui::End();
+//        ImGui::Begin("Stats");
+//        ImGui::Text("%s index: %ld  fps: %f diff: %d",
+//                    window_name_.c_str(),
+//                    image_index,
+//                    fps_,
+//                    upload_count_ - valid_count_);
+//        ImGui::End();
     }
 
  private:
