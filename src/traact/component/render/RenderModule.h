@@ -88,7 +88,7 @@ class RenderModule : public Module {
     std::mutex data_lock_;
     std::thread thread_;
     std::promise<void> initialized_promise_;
-    bool running_{false};
+    std::atomic_bool running_{false};
     WaitForInit additional_commands_processed_;
 
     std::map<std::string, std::optional<ImVec2>> render_size_{};

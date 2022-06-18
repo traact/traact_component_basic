@@ -48,7 +48,15 @@ bool RenderModule::stop(Module::ComponentPtr module_component) {
     if (!running_)
         return true;
     running_ = false;
-    thread_.join();
+
+    try {
+        if (thread_.joinable()) {
+            thread_.join();
+        }
+    } catch (std::exception e) {
+        SPDLOG_ERROR(e.what());
+    }
+
     return true;
 }
 
@@ -227,19 +235,23 @@ void RenderModule::threadLoop() {
         auto render_time = render_end - render_start;
 
         auto wait_time = target_loop_time_ - render_time;
-        SPDLOG_TRACE("render sleep render time {0} wait time {1}",
-                     std::chrono::duration_cast<std::chrono::milliseconds>(render_time).count(),
-                     std::chrono::duration_cast<std::chrono::milliseconds>(wait_time).count());
+        //SPDLOG_TRACE("render sleep render time {0} wait time {1}",
+        //                   std::chrono::duration_cast<std::chrono::milliseconds>(render_time).count(),
+        //                   std::chrono::duration_cast<std::chrono::milliseconds>(wait_time).count());
         if (wait_time > std::chrono::milliseconds(1)) {
             std::this_thread::sleep_for(wait_time);
             auto after_sleep = nowSteady();
-            SPDLOG_TRACE("render sleep total {0}", (after_sleep - render_end).count());
+            //SPDLOG_TRACE("render sleep total {0}", (after_sleep - render_end).count());
         }
 
-//        if (!window_open) {
-//            window_components_.begin()->second.front()->setSourceFinished();
-//        }
-        SPDLOG_DEBUG("render loop finished");
+        if (!window_open) {
+            //SPDLOG_TRACE("close window");
+            // at least one window with one component must exist
+            // get first component of first window to call finished
+            window_components_.begin()->second.front()->setSourceFinished();
+            //SPDLOG_TRACE("close window finished");
+        }
+        //SPDLOG_DEBUG("render loop finished");
     }
 
     glfwPollEvents();
@@ -340,7 +352,7 @@ void RenderModule::setImageRenderSize(ImVec2 render_size, const std::string &win
     render_size_[window] = render_size;
 }
 
-const std::optional<ImVec2> & RenderModule::getImageRenderSize(const std::string &window) const{
+const std::optional<ImVec2> &RenderModule::getImageRenderSize(const std::string &window) const {
     return render_size_.at(window);
 }
 

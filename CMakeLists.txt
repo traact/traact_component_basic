@@ -33,7 +33,7 @@ set(BASIC_COMPONENT_SRC
 set(IMGUI_BINDING_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.h
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.h
-        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp src/traact/component/vision/OpenCvArucoTracker.cpp)
+        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp src/traact/component/vision/OpenCvArucoTracker.cpp src/traact/component/tracking/OutsideInPointEstimation.cpp)
 
 find_package(imgui CONFIG)
 find_package(glfw3 CONFIG)
@@ -41,7 +41,7 @@ find_package(glew CONFIG)
 
 add_library(${CONAN_PACKAGE_NAME} SHARED
         ${BASIC_COMPONENT_SRC}
-        ${IMGUI_BINDING_SOURCES} src/traact/component/render/traact_opengl.h src/traact/component/vision/OpenCvBlobDetection.cpp src/traact/component/render/RenderKeyPointList.cpp src/traact/component/render/RenderModuleComponent.cpp src/traact/component/render/RenderModuleComponent.h)
+        ${IMGUI_BINDING_SOURCES} src/traact/component/render/traact_opengl.h src/traact/component/vision/OpenCvBlobDetection.cpp src/traact/component/render/RenderKeyPointList.cpp src/traact/component/render/RenderModuleComponent.cpp src/traact/component/render/RenderModuleComponent.h src/traact/component/tracking/GatherCameraInitPose.cpp)
 
 target_compile_definitions(${CONAN_PACKAGE_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW)
 

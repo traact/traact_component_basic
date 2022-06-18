@@ -83,16 +83,31 @@ class BruteForceEstimatePose : public Component {
         cv::KeyPoint::convert(points2d, image_points);
 
         Timestamp ts_start2 = now();
-        auto result = tryClusterCombinations(
-            image_points,
-            points3d,
-            calibration,
-            output, min_error_, max_error_, max_point_distance_, nullptr);
+
+        bool result = false;
+
+//        if(!last_successful_.empty()){
+//            auto error = testCombination(image_points, points3d, calibration, output, last_successful_);
+//            if(error < min_error_){
+//                SPDLOG_INFO("found pose using last index list");
+//                result = true;
+//            }
+//
+//        }
+
+        if(!result){
+            result = tryClusterCombinations(
+                image_points,
+                points3d,
+                calibration,
+                output, min_error_, max_error_, max_point_distance_, &last_successful_);
+        }
         TimeDuration dur2 = now() - ts_start2;
         SPDLOG_INFO("found pose {0} in {1}", result, std::chrono::duration_cast<std::chrono::milliseconds>(dur2).count());
 
         if (!result) {
             data.setOutputInvalid<OutPortPose>();
+            last_successful_.clear();
         }
 
         return true;
@@ -103,6 +118,7 @@ class BruteForceEstimatePose : public Component {
     Scalar max_point_distance_;
     Scalar min_error_;
     Scalar max_error_;
+    std::vector<size_t> last_successful_;
 };
 
 CREATE_TRAACT_COMPONENT_FACTORY(BruteForceEstimatePose)

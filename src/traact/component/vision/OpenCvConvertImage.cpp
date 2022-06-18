@@ -38,6 +38,7 @@ class OpenCvConvertImage : public Component {
     bool configure(const pattern::instance::PatternInstance &pattern_instance, buffer::ComponentBufferConfig *data) override {
         pattern::setValueFromParameter(pattern_instance, "alpha", alpha_, 255.0 / 2000.0);
         pattern::setValueFromParameter(pattern_instance, "beta", beta_, 0);
+        SPDLOG_INFO("set convert parameter to alpha {0} beta {1}", alpha_, beta_);
         return true;
     }
 
