@@ -14,7 +14,7 @@ class Inversion : public Component {
     static pattern::Pattern::Ptr GetPattern(){
         using namespace traact::spatial;
         pattern::Pattern::Ptr
-            pattern = std::make_shared<pattern::Pattern>("InversionComponent", Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
+            pattern = std::make_shared<pattern::Pattern>("InversionPose6D", Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort("input", Pose6DHeader::NativeTypeName)
             .addProducerPort("output", Pose6DHeader::NativeTypeName);

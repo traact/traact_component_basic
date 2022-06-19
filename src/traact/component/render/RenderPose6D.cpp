@@ -7,6 +7,8 @@ namespace traact::component::render {
 
 class RenderPose6D : public RenderComponent {
  public:
+    using InPortPose = buffer::PortConfig<spatial::Pose6DHeader, 0>;
+    using InPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
     RenderPose6D(const std::string &name)
         : RenderComponent(name) {}
 
@@ -16,8 +18,8 @@ class RenderPose6D : public RenderComponent {
             pattern =
             std::make_shared<traact::pattern::Pattern>("RenderPose6D", Concurrency::SERIAL,ComponentType::SYNC_SINK);
 
-        pattern->addConsumerPort("input", Pose6DHeader::NativeTypeName);
-        pattern->addConsumerPort("input_calibration", vision::CameraCalibrationHeader::NativeTypeName);
+        pattern->addConsumerPort<InPortPose>("input");
+        pattern->addConsumerPort<InPortCalibration>("input_calibration");
         pattern->addStringParameter("Window", "RenderWindow")
             .addParameter("Priority", 3000);
         pattern->addCoordinateSystem("Camera").addCoordinateSystem("ImagePlane")
@@ -29,21 +31,20 @@ class RenderPose6D : public RenderComponent {
 
     bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::spatial;
-        //std::scoped_lock lock(data_lock_);
-        auto pose = data.getInput<Pose6DHeader>(0);
-        auto calibration = data.getInput<vision::CameraCalibrationHeader>(1);
+
+        auto& pose = data.getInput<InPortPose>();
+        auto& calibration = data.getInput<InPortCalibration>();
 
         latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
                                                        data.getTimestamp().time_since_epoch().count(), priority_,
-                                                       [this, calibration, pose] { Draw(calibration, pose); });
+                                                       [this, calibration, pose] { draw(calibration, pose); });
         render_module_->setComponentReady(latest_command_);
 
         return true;
 
     }
 
-    void Draw(vision::CameraCalibration calibration, spatial::Pose6D pose) {
-        //std::scoped_lock lock(data_lock_);
+    void draw(vision::CameraCalibration calibration, spatial::Pose6D pose) {
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
         ImVec2 v_min = ImGui::GetWindowContentRegionMin();
         auto win_pos = ImGui::GetWindowPos();

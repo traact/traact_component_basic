@@ -53,7 +53,7 @@ bool RenderModule::stop(Module::ComponentPtr module_component) {
         if (thread_.joinable()) {
             thread_.join();
         }
-    } catch (std::exception e) {
+    } catch(std::exception &e) {
         SPDLOG_ERROR(e.what());
     }
 

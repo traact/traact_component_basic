@@ -60,11 +60,7 @@ class RenderKeyPointList : public RenderComponent {
 
         }
 
-        ImGui::Begin("Stats");
-        ImGui::Text("%s index: %ld",
-                    window_name_.c_str(),
-                    data.size());
-        ImGui::End();
+
 
     }
 

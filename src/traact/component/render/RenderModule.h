@@ -1,7 +1,14 @@
 /** Copyright (C) 2022  Frieder Pankratz <frieder.pankratz@gmail.com> **/
 
-#ifndef TRAACTMULTI_RENDERMODULE_H
-#define TRAACTMULTI_RENDERMODULE_H
+#ifndef TRAACT_COMPONENT_BASIC_SRC_TRAACT_COMPONENT_RENDER_RENDERMODULE_H_
+#define TRAACT_COMPONENT_BASIC_SRC_TRAACT_COMPONENT_RENDER_RENDERMODULE_H_
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui.h>
+#include <imgui_internal.h>
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 #include <future>
 #include <map>
@@ -13,13 +20,7 @@
 #include <traact/vision.h>
 #include <traact/util/FpsCounter.h>
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui.h>
-#include <imgui_internal.h>
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+
 
 namespace traact::component::render {
 
@@ -120,4 +121,4 @@ class RenderModule : public Module {
 
 }
 
-#endif //TRAACTMULTI_RENDERMODULE_H
+#endif //TRAACT_COMPONENT_BASIC_SRC_TRAACT_COMPONENT_RENDER_RENDERMODULE_H_

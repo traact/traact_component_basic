@@ -32,9 +32,9 @@ class OpenCvUndistortImage : public Component {
             .addConsumerPort<InPortCalibration>("input_calibration")
             .addProducerPort<OutPortImage>("output")
             .addProducerPort<OutPortCalibration>("output_calibration")
-            .addParameter("OptimizeIntrinsics", false)
-            .addParameter("CenterPrinciplePoint", false)
-            .addParameter("Alpha", 1.0, 0.0, 1.0)
+            .addParameter("optimizeIntrinsics", false)
+            .addParameter("centerPrinciplePoint", false)
+            .addParameter("alpha", 1.0, 0.0, 1.0)
             .addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Image", true)
             .addEdge("ImagePlane", "Image", "input")
@@ -46,9 +46,9 @@ class OpenCvUndistortImage : public Component {
 
     virtual bool configure(const pattern::instance::PatternInstance &pattern_instance,
                            buffer::ComponentBufferConfig *data) override {
-        pattern_instance.setValueFromParameter("OptimizeIntrinsics", optimize_intrinsics_);
-        pattern_instance.setValueFromParameter("CenterPrinciplePoint", center_principle_point_);
-        pattern_instance.setValueFromParameter("Alpha", alpha_);
+        pattern_instance.setValueFromParameter("optimizeIntrinsics", optimize_intrinsics_);
+        pattern_instance.setValueFromParameter("centerPrinciplePoint", center_principle_point_);
+        pattern_instance.setValueFromParameter("alpha", alpha_);
         return true;
     }
 

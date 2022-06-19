@@ -6,6 +6,7 @@
 
 namespace traact::component {
 
+
 class Multiplication : public Component {
  public:
     explicit Multiplication(const std::string &name) : Component(name) {}
@@ -13,10 +14,10 @@ class Multiplication : public Component {
     static pattern::Pattern::Ptr GetPattern(){
         using namespace traact::spatial;
         pattern::Pattern::Ptr
-            pattern = std::make_shared<pattern::Pattern>("MultiplicationComponent", traact::Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
+            pattern = std::make_shared<pattern::Pattern>("MultiplicationPose6DPose6D", traact::Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
-        pattern->addConsumerPort("input0", Pose6DHeader::NativeTypeName)
-            .addConsumerPort("input1", Pose6DHeader::NativeTypeName)
+        pattern->addConsumerPort("input_a", Pose6DHeader::NativeTypeName)
+            .addConsumerPort("input_b", Pose6DHeader::NativeTypeName)
             .addProducerPort("output", Pose6DHeader::NativeTypeName);
 
         pattern->addCoordinateSystem("A", false)

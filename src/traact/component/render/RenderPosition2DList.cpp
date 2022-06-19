@@ -28,7 +28,7 @@ class RenderPosition2DList : public RenderComponent {
 
     bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::spatial;
-        const auto input = data.getInput<InPortPoints>();
+        const auto& input = data.getInput<InPortPoints>();
 
         latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
                                                        data.getTimestamp().time_since_epoch().count(), priority_,
@@ -40,24 +40,23 @@ class RenderPosition2DList : public RenderComponent {
     }
 
     void Draw(vision::Position2DList data) {
-        //std::scoped_lock lock(data_lock_);
         ImDrawList *draw_list = ImGui::GetWindowDrawList();
-        ImVec2 vMin = ImGui::GetWindowContentRegionMin();
-        auto win_pos = ImGui::GetWindowPos();
-        win_pos.x += vMin.x + 0.5f;
-        win_pos.y += vMin.y + 0.5f;
 
-        for (const auto &point : data) {
-            draw_list->AddCircle(ImVec2(win_pos.x + point.x, win_pos.y + point.y), 5, ImColor(255, 0, 0));
+        auto win_pos = ImGui::GetWindowPos()+ImGui::GetWindowContentRegionMin();
+
+        auto render_size = render_module_->getImageRenderSize(window_name_);
+        auto image_size = render_module_->getImageSize(window_name_);
+        ImVec2 scale(1.0,1.0);
+        if(image_size.has_value() && render_size.has_value()){
+            scale = render_size.value() / image_size.value();
         }
 
+        for (const auto &point : data) {
+            ImVec2 point_pos(point.x,point.y);
+            point_pos = win_pos + point_pos * scale;
+            draw_list->AddCircle(point_pos, 5, ImColor(125, 54, 0));
+        }
     }
-
- private:
-    //vision::Position2DList data_;
-    //std::mutex data_lock_;
-
-
 
 
 };
