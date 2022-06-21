@@ -82,11 +82,12 @@ class OpenCvColorToGray : public Component {
             case vision::PixelFormat::FLOAT:
             case vision::PixelFormat::MJPEG:{
                 SPDLOG_ERROR("unsupported pixel format for color to gray conversion");
-                return false;
+                data.setOutputInvalid<OutPort>();
+                return true;
             }
         }
 
-        cv::cvtColor(input, output, cv::COLOR_BGRA2GRAY);
+        cv::cvtColor(input, output, convert_code);
 
         return true;
     }
