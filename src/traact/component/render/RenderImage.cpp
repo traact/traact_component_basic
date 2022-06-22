@@ -68,7 +68,7 @@ class RenderImage : public RenderComponent {
 
         latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
                                                           image_index, priority_,
-                                                          [this, image_index] { draw(image_index); });
+                                                          [this, image_index]() { draw(image_index); });
 
         render_module_->setComponentReady(latest_command_);
 
@@ -84,7 +84,14 @@ class RenderImage : public RenderComponent {
     }
 
     virtual bool processTimePointWithInvalid(buffer::ComponentBuffer &data) override {
-        latest_command_->updateMeaIdxForReuse(data.getTimestamp().time_since_epoch().count());
+        if(latest_command_){
+            latest_command_->updateMeaIdxForReuse(data.getTimestamp().time_since_epoch().count());
+        } else {
+            latest_command_ = std::make_shared<RenderCommand>(window_name_, getName(),
+                                                              data.getTimestamp().time_since_epoch().count(), priority_,
+                                                              []() {  });
+        }
+
         render_module_->setComponentReady(latest_command_);
         return true;
     }
