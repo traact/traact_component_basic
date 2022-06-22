@@ -66,7 +66,7 @@ class OpenCvArucoTracker : public Component {
         dictionary_ = cv::aruco::getPredefinedDictionary(dict);
         parameter_ = cv::aruco::DetectorParameters::create();
 
-        const auto& pose_groups = pattern_instance.port_groups_[pose_port_group_.port_group_index];
+        const auto& pose_groups = pattern_instance.port_groups[pose_port_group_.port_group_index];
         for (const auto& port_group_instance : pose_groups) {
             int marker_id;
             port_group_instance->setValueFromParameter("MarkerId", marker_id);
