@@ -22,7 +22,7 @@ class TraactPackage(ConanFile):
     def requirements(self):
         self.traact_requires("traact_spatial", "latest")
         self.traact_requires("traact_vision", "latest")
-        self.requires("spdlog/[>=1.9.1]")
+        self.requires("spdlog/1.10.0")
         self.requires("imgui/1.83")
         self.requires("glfw/3.3.4")
         self.requires("glew/2.2.0")
