@@ -30,8 +30,8 @@ class OpenCvBlobDetection : public Component {
             .addParameter("FilterByConvexity", false)
             .addParameter("FilterByInertia", false)
             .addParameter("FilterByColor", false)
-            .addParameter("MaxArea", std::numeric_limits<float>::max())
-            .addParameter("MinArea", 0)
+            .addParameter("MaxArea", std::numeric_limits<double>::max()/2, 0.0)
+            .addParameter("MinArea", 0, 0)
             .addParameter("MaxCircularity", 1.0, 0.0, 1.0)
             .addParameter("MinCircularity", 0.0, 0.0, 1.0)
             .addParameter("MaxConvexity", 1.0, 0.0, 1.0)
@@ -39,9 +39,9 @@ class OpenCvBlobDetection : public Component {
             .addParameter("MaxInertiaRatio", 1.0, 0.0, 1.0)
             .addParameter("MinInertiaRatio", 0.0, 0.0, 1.0)
             .addParameter("MaxThreshold", 1.0, 0.0, 1.0)
-            .addParameter("MinThreshold", 0.0)
-            .addParameter("MinDistBetweenBlobs", 0.0)
-            .addParameter("BlobColor", 0);
+            .addParameter("MinThreshold", 0.0, 0.0)
+            .addParameter("MinDistBetweenBlobs", 0.0, 0.0)
+            .addParameter("BlobColor", 0, 0,255);
 
         pattern->addCoordinateSystem("Camera").addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Points")
