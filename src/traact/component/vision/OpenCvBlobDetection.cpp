@@ -40,6 +40,7 @@ class OpenCvBlobDetection : public Component {
             .addParameter("MinInertiaRatio", 0.0, 0.0, 1.0)
             .addParameter("MaxThreshold", 1.0, 0.0, 1.0)
             .addParameter("MinThreshold", 0.0, 0.0)
+            .addParameter("ThresholdStep", 10.0, 0.0,100.0)
             .addParameter("MinDistBetweenBlobs", 0.0, 0.0)
             .addParameter("BlobColor", 0, 0,255);
 
@@ -70,8 +71,10 @@ class OpenCvBlobDetection : public Component {
         pattern_instance.setValueFromParameter("MinThreshold", blob_detector_config_.minThreshold);
         pattern_instance.setValueFromParameter("MinDistBetweenBlobs", blob_detector_config_.minDistBetweenBlobs);
         pattern_instance.setValueFromParameter("BlobColor", blob_detector_config_.blobColor);
+        pattern_instance.setValueFromParameter("ThresholdStep", blob_detector_config_.thresholdStep);
 
-        feature_id_ = vision::createFeatureId();
+
+        //detector_ = cv::SimpleBlobDetector::create(blob_detector_config_);
 
         use_features_ = pattern_instance.getOutputPortsConnected(kDefaultTimeDomain).at(OutPortFeatures::PortIdx);
 
@@ -79,7 +82,8 @@ class OpenCvBlobDetection : public Component {
     }
 
     virtual bool start() override {
-        detector_ = cv::SimpleBlobDetector::create(blob_detector_config_);
+        feature_id_ = vision::createFeatureId();
+
         return true;
     }
 
@@ -92,7 +96,9 @@ class OpenCvBlobDetection : public Component {
 
         try {
 
-            detector_->detect(image, output);
+            //detector_->detect(image, output);
+            auto local_detector = cv::SimpleBlobDetector::create(blob_detector_config_);
+            local_detector->detect(image, output);
             if(use_features_){
                 auto& output_features = data.getOutput<OutPortFeatures>();
                 output_features.createIds(output.size(), feature_id_);

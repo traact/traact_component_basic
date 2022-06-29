@@ -49,6 +49,7 @@ class OpenCvUndistortImage : public Component {
         pattern_instance.setValueFromParameter("optimizeIntrinsics", optimize_intrinsics_);
         pattern_instance.setValueFromParameter("centerPrinciplePoint", center_principle_point_);
         pattern_instance.setValueFromParameter("alpha", alpha_);
+        undistortion_.reset();
         return true;
     }
 

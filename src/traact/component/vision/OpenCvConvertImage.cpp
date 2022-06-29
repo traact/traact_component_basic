@@ -24,8 +24,8 @@ class OpenCvConvertImage : public Component {
 
         pattern->addConsumerPort<InPortImage>("input")
         .addProducerPort<OutPortImage>("output")
-        .addParameter("alpha", 255.0 / 2000.0)
-        .addParameter("beta", 0.0);
+        .addParameter("alpha", 255.0 / 2000.0, 0.0, 1.0)
+        .addParameter("beta", 0.0, -255.0, 255.0);
 
         pattern->addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Image", true)

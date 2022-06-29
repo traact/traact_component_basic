@@ -32,13 +32,24 @@ class OutsideInPointEstimation : public Component {
             .addConsumerPort<InPortGroupInputCalibration>("calibration")
             .addConsumerPort<InPortGroupInputPointList>("points")
             .addConsumerPort<InPortGroupInputPointListFeature>("points_feature")
-            .endPortGroup();
+            .endPortGroup()
+            .addParameter("distance_threshold", 0.01, 0.0, 1.0)
+            .addParameter("min_candidates", 2, 2, 10)
+            .addParameter("max_error", 5.0, 0.0, 10.0);
 
         return pattern;
     }
 
     virtual void configureInstance(const pattern::instance::PatternInstance &pattern_instance) override {
         group_info_ = pattern_instance.getPortGroupInfo("camera");
+    }
+
+    virtual bool configure(const pattern::instance::PatternInstance &pattern_instance,
+                           buffer::ComponentBufferConfig *data) override {
+        pattern_instance.setValueFromParameter("distance_threshold", parameter_.distance_threshold);
+        pattern_instance.setValueFromParameter("min_candidates", parameter_.min_candidates);
+        pattern_instance.setValueFromParameter("max_error", parameter_.max_error);
+        return true;
     }
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
@@ -66,7 +77,7 @@ class OutsideInPointEstimation : public Component {
         auto &output = data.getOutput<OutPortPosition3DList>();
         output.clear();
         std::vector<std::map<size_t, size_t>> output_to_group_point_index;
-        vision::outside_in::estimatePoints(cameras2world, calibrations, points, output, &output_to_group_point_index);
+        vision::outside_in::estimatePoints(cameras2world, calibrations, points, output, &output_to_group_point_index, parameter_);
         SPDLOG_DEBUG("found points {0}", output.size());
 
         for (const auto &p : output) {
@@ -95,7 +106,7 @@ class OutsideInPointEstimation : public Component {
     }
 
  private:
-
+    vision::outside_in::EstimatePointsParameter parameter_;
     PortGroupInfo group_info_;
 
 };
