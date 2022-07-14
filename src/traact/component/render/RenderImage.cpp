@@ -104,7 +104,7 @@ class RenderImage : public RenderComponent {
     }
 
     void uploadImage(traact::buffer::ComponentBuffer &data)  {
-        const auto image = data.getInput<InPortImage>().getImage();
+        const auto image = data.getInput<InPortImage>().value();
         auto image_header = data.getInputHeader<InPortImage>();
         SPDLOG_TRACE("{0}: uploadImage {1}", getName(), data.getTimestamp());
 

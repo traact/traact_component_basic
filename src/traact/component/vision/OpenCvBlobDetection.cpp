@@ -89,7 +89,7 @@ class OpenCvBlobDetection : public Component {
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
-        const auto &image = data.getInput<InPortImage>().getImage();
+        const auto &image = data.getInput<InPortImage>().value();
 
         auto &output = data.getOutput<OutPortPoints>();
         output.clear();

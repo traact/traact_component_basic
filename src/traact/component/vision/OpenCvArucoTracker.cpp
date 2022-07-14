@@ -78,7 +78,7 @@ class OpenCvArucoTracker : public Component {
 
     bool processTimePoint(traact::buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
-        const auto &input_image = data.getInput<InPortImage>().getImage();
+        const auto &input_image = data.getInput<InPortImage>().value();
         const auto &input_calibration = data.getInput<InPortCalibration>();
 
         std::vector<std::vector<cv::Point2f>> markers, rejected_candidates;
@@ -94,7 +94,7 @@ class OpenCvArucoTracker : public Component {
         if (debug_port_group_.size > 0) {
             // there can be only one of this port group
             SPDLOG_TRACE("create debug image");
-            auto& output = data.getOutput<OutPortGroupDebug>(debug_port_group_.port_group_index, 0).getImage();
+            auto& output = data.getOutput<OutPortGroupDebug>(debug_port_group_.port_group_index, 0).value();
             auto& output_header = data.getOutputHeader<OutPortGroupDebug>(debug_port_group_.port_group_index, 0);
             output_header.copyFrom(data.getInputHeader<InPortImage>());
             output_header.pixel_format = PixelFormat::RGB;
