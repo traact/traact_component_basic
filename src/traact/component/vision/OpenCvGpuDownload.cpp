@@ -6,22 +6,22 @@
 #include <traact/vision.h>
 #include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
-#include <traact/component/GpuComponent.h>
+#include <traact/component/CudaComponent.h>
 #include <opencv2/core/cuda_stream_accessor.hpp>
 namespace traact::component::opencv {
 
-class OpenCvGpuDownload : public GpuComponent {
+class OpenCvGpuDownload : public CudaComponent {
  public:
     using InPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using OutPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
-    explicit OpenCvGpuDownload(const std::string &name) : GpuComponent(name) {
+    explicit OpenCvGpuDownload(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            GpuComponent::GetPattern("OpenCvGpuDownload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
+            CudaComponent::GetPattern("OpenCvGpuDownload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addProducerPort<OutPortImage>("output")
@@ -51,7 +51,7 @@ class OpenCvGpuDownload : public GpuComponent {
         return true;
     }
 
-    GpuTask createGpuTask(buffer::ComponentBuffer *data) override {
+    CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
         return [data](cudaStream_t stream) {
             if(data->isInputValid<InPortImage>()){
                 const auto &gpu_image = data->getInput<InPortImage>().value();

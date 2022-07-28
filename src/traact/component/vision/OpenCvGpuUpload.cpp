@@ -3,22 +3,22 @@
 #include <traact/traact.h>
 #include <traact/vision.h>
 #include <opencv2/videoio.hpp>
-#include <traact/component/GpuComponent.h>
+#include <traact/component/CudaComponent.h>
 #include <opencv2/core/cuda_stream_accessor.hpp>
 
 namespace traact::component::opencv {
 
-class OpenCvGpuUpload : public GpuComponent {
+class OpenCvGpuUpload : public CudaComponent {
  public:
     using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
     using OutPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
-    explicit OpenCvGpuUpload(const std::string &name) : GpuComponent(name) {
+    explicit OpenCvGpuUpload(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
-            pattern = GpuComponent::GetPattern("OpenCvGpuUpload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
+            pattern = CudaComponent::GetPattern("OpenCvGpuUpload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addProducerPort<OutPortImage>("output");
@@ -43,7 +43,7 @@ class OpenCvGpuUpload : public GpuComponent {
         return true;
     }
 
-    GpuTask createGpuTask(buffer::ComponentBuffer *data) override {
+    CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
         SPDLOG_INFO("create gpu task");
         return [data](cudaStream_t stream) {
 
