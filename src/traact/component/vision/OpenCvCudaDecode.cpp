@@ -9,18 +9,18 @@
 
 namespace traact::component::opencv {
 
-class OpenCvGpuDecode : public Component {
+class OpenCvCudaDecode : public Component {
  public:
     using InPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using OutPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
-    explicit OpenCvGpuDecode(const std::string &name) : Component(name) {
+    explicit OpenCvCudaDecode(const std::string &name) : Component(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCvGpuDecode", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
+            std::make_shared<traact::pattern::Pattern>("OpenCvCudaDecode", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addProducerPort<OutPortImage>("output")
@@ -51,10 +51,10 @@ class OpenCvGpuDecode : public Component {
 
 };
 
-CREATE_TRAACT_COMPONENT_FACTORY(OpenCvGpuDecode)
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvCudaDecode)
 
 }
 
 BEGIN_TRAACT_PLUGIN_REGISTRATION
-    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvGpuDecode)
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvCudaDecode)
 END_TRAACT_PLUGIN_REGISTRATION

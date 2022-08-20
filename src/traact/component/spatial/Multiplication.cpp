@@ -2,7 +2,6 @@
 
 #include <traact/traact.h>
 #include "traact/spatial.h"
-#include <rttr/registration>
 
 namespace traact::component {
 

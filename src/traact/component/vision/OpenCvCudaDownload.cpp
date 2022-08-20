@@ -10,18 +10,18 @@
 #include <opencv2/core/cuda_stream_accessor.hpp>
 namespace traact::component::opencv {
 
-class OpenCvGpuDownload : public CudaComponent {
+class OpenCvCudaDownload : public CudaComponent {
  public:
     using InPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using OutPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
-    explicit OpenCvGpuDownload(const std::string &name) : CudaComponent(name) {
+    explicit OpenCvCudaDownload(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            CudaComponent::GetPattern("OpenCvGpuDownload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
+            CudaComponent::GetPattern("OpenCvCudaDownload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addProducerPort<OutPortImage>("output")
@@ -75,10 +75,10 @@ class OpenCvGpuDownload : public CudaComponent {
 
 };
 
-CREATE_TRAACT_COMPONENT_FACTORY(OpenCvGpuDownload)
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvCudaDownload)
 
 }
 
 BEGIN_TRAACT_PLUGIN_REGISTRATION
-    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvGpuDownload)
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvCudaDownload)
 END_TRAACT_PLUGIN_REGISTRATION

@@ -1,7 +1,5 @@
 /** Copyright (C) 2022  Frieder Pankratz <frieder.pankratz@gmail.com> **/
 
-#include <rttr/registration>
-
 #include <traact/traact.h>
 #include <traact/vision.h>
 #include <opencv2/videoio.hpp>
@@ -12,20 +10,20 @@
 
 namespace traact::component::opencv {
 
-class OpenCvGpuUndistortImage : public CudaComponent {
+class OpenCvCudaUndistortImage : public CudaComponent {
  public:
     using InPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using InPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
     using OutPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using OutPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
 
-    explicit OpenCvGpuUndistortImage(const std::string &name) : CudaComponent(name) {
+    explicit OpenCvCudaUndistortImage(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
-            pattern = CudaComponent::GetPattern("OpenCvGpuUndistortImage",
+            pattern = CudaComponent::GetPattern("OpenCvCudaUndistortImage",
                                                Concurrency::SERIAL,
                                                ComponentType::SYNC_FUNCTIONAL);
 
@@ -98,11 +96,11 @@ class OpenCvGpuUndistortImage : public CudaComponent {
 
 };
 
-CREATE_TRAACT_COMPONENT_FACTORY(OpenCvGpuUndistortImage)
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvCudaUndistortImage)
 
 }
 
 BEGIN_TRAACT_PLUGIN_REGISTRATION
-    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvGpuUndistortImage)
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvCudaUndistortImage)
 END_TRAACT_PLUGIN_REGISTRATION
 

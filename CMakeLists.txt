@@ -40,14 +40,14 @@ set(BASIC_COMPONENT_SRC
         src/traact/component/tracking/GatherCameraInitPose.cpp
         src/traact/component/vision/OpenCvArucoTracker.cpp
         src/traact/component/tracking/OutsideInPointEstimation.cpp src/traact/component/spatial/MultiplicationPose6DPosition3DList.cpp src/traact/component/tracking/FindTargetInPosition3DList.cpp
-        src/traact/component/vision/OpenCvGpuEncode.cpp
+        src/traact/component/vision/OpenCvCudaEncode.cpp
         )
 
 
 set(IMGUI_BINDING_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.h
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.h
-        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp src/traact/component/vision/OpenCvGpuDownload.cpp)
+        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp src/traact/component/vision/OpenCvCudaDownload.cpp)
 
 find_package(imgui CONFIG)
 find_package(glfw3 CONFIG)
@@ -58,8 +58,8 @@ find_package(glew CONFIG)
 add_library(${CONAN_PACKAGE_NAME} SHARED
         ${IMGUI_BINDING_SOURCES}
         ${BASIC_COMPONENT_SRC}
-        src/traact/component/vision/OpenCvGpuDecode.cpp src/traact/component/vision/OpenCvGpuUpload.cpp src/traact/component/vision/OpenCvGpuConvertImage.cpp src/traact/component/vision/OpenCvGpuUndistortImage.cpp
-        src/traact/component/vision/VisionGpuFunctions.cu src/traact/component/vision/VisionGpuFunctions.cuh)
+        src/traact/component/vision/OpenCvCudaDecode.cpp src/traact/component/vision/OpenCvCudaUpload.cpp src/traact/component/vision/OpenCvCudaConvertImage.cpp src/traact/component/vision/OpenCvCudaUndistortImage.cpp
+        src/traact/component/vision/VisionGpuFunctions.cu src/traact/component/vision/VisionGpuFunctions.cuh src/traact/component/vision/OpenCvCudaCvtColor.cpp)
 
 
 

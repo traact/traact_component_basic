@@ -8,17 +8,17 @@
 
 namespace traact::component::opencv {
 
-class OpenCvGpuUpload : public CudaComponent {
+class OpenCvCudaUpload : public CudaComponent {
  public:
     using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
     using OutPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
-    explicit OpenCvGpuUpload(const std::string &name) : CudaComponent(name) {
+    explicit OpenCvCudaUpload(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
-            pattern = CudaComponent::GetPattern("OpenCvGpuUpload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
+            pattern = CudaComponent::GetPattern("OpenCvCudaUpload", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addProducerPort<OutPortImage>("output");
@@ -44,18 +44,11 @@ class OpenCvGpuUpload : public CudaComponent {
     }
 
     CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
-        SPDLOG_INFO("create gpu task");
         return [data](cudaStream_t stream) {
 
             if(data->isInputValid<InPortImage>()){
                 const auto &cpu_image = data->getInput<InPortImage>().value();
                 auto &gpu_image = data->getOutput<OutPortImage>().value();
-
-//                auto status = cudaMemcpy2DAsync(gpu_image.data, gpu_image.step, cpu_image.data, cpu_image.step, cpu_image.cols, cpu_image.rows, cudaMemcpyHostToDevice, stream);
-//                if(status != cudaSuccess){
-//                    SPDLOG_ERROR("unable to upload to gpu");
-//                    data->setOutputInvalid<OutPortImage>();
-//                }
                 auto cv_stream = cv::cuda::StreamAccessor::wrapStream(stream);
                 gpu_image.upload(cpu_image, cv_stream);
             }
@@ -67,10 +60,10 @@ class OpenCvGpuUpload : public CudaComponent {
 
 };
 
-CREATE_TRAACT_COMPONENT_FACTORY(OpenCvGpuUpload)
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvCudaUpload)
 
 }
 
 BEGIN_TRAACT_PLUGIN_REGISTRATION
-    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvGpuUpload)
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvCudaUpload)
 END_TRAACT_PLUGIN_REGISTRATION

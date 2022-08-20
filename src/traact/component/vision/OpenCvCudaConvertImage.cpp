@@ -10,18 +10,18 @@
 
 namespace traact::component::opencv {
 
-class OpenCvGpuConvertImage : public CudaComponent {
+class OpenCvCudaConvertImage : public CudaComponent {
  public:
     using InPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using OutPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
-    explicit OpenCvGpuConvertImage(const std::string &name) : CudaComponent(name) {
+    explicit OpenCvCudaConvertImage(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            CudaComponent::GetPattern("OpenCvGpuConvertImage", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
+            CudaComponent::GetPattern("OpenCvCudaConvertImage", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addProducerPort<OutPortImage>("output")
@@ -82,10 +82,10 @@ class OpenCvGpuConvertImage : public CudaComponent {
 
 };
 
-CREATE_TRAACT_COMPONENT_FACTORY(OpenCvGpuConvertImage)
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvCudaConvertImage)
 
 }
 
 BEGIN_TRAACT_PLUGIN_REGISTRATION
-    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvGpuConvertImage)
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvCudaConvertImage)
 END_TRAACT_PLUGIN_REGISTRATION

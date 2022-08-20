@@ -278,7 +278,7 @@ void RenderModule::threadLoop() {
 }
 void RenderModule::updateCurrentRenderCommands() {
     std::scoped_lock lock(data_lock_);
-    SPDLOG_TRACE("RenderModule: update current render events");
+    SPDLOG_TRACE("RenderModule: updateMovement current render events");
     bool all_windows_valid = true;
     for (auto &window_components : window_components_) {
         std::string window_name = window_components.first;
@@ -365,16 +365,16 @@ void RenderModule::addAdditionalCommand(RenderCommand::Ptr render_command) {
 
 }
 void RenderModule::processTimePoint() {
-    SPDLOG_TRACE("update current render commands: start");
+    SPDLOG_TRACE("updateMovement current render commands: start");
     updateCurrentRenderCommands();
-    SPDLOG_TRACE("update current render commands: start waiting");
+    SPDLOG_TRACE("updateMovement current render commands: start waiting");
     TimestampSteady start = nowSteady();
     while (!additional_commands_processed_.tryWait() && running_) {
         SPDLOG_WARN(
             "timeout waiting for additional render commands of render module to be processed (e.g. image texture upload)");
     }
     auto end = nowSteady();
-    SPDLOG_DEBUG("update current render commands: done in {0}", end - start);
+    SPDLOG_DEBUG("updateMovement current render commands: done in {0}", end - start);
 }
 void RenderModule::setCameraCalibration(const vision::CameraCalibration &camera_calibration,
                                         const std::string &window) {
@@ -388,6 +388,9 @@ void RenderModule::setImageSize(ImVec2 image_size, const std::string &window) {
 }
 const std::optional<ImVec2> &RenderModule::getImageSize(const std::string &window) const {
     return image_size_.at(window);
+}
+bool RenderModule::useConstraints() const {
+    return true;
 }
 
 void RenderCommand::DoRender() {
