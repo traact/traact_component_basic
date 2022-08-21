@@ -27,6 +27,8 @@ class TraactPackage(ConanFile):
         self.requires("imgui/cci.20220207+1.87.docking")
         self.requires("glfw/3.3.4")
         self.requires("glew/2.2.0")
+        self.requires("apriltag/3.1.4@camposs/stable")
+
         if self.options.with_tests:
             self.requires("gtest/[>=1.11.0]")
 

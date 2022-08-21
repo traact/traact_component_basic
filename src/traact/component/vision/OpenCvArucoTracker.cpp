@@ -32,14 +32,14 @@ class OpenCvArucoTracker : public Component {
 
         pattern->beginPortGroup("output_pose", 1, std::numeric_limits<int>::max())
             .addProducerPort<OutPortGroupPose>("output")
-            .addParameter("MarkerId", 0, 0)
+            .addParameter("marker_id", 0, 0)
             .endPortGroup();
         pattern->beginPortGroup("output_debug", 0, 1)
             .addProducerPort<OutPortGroupDebug>("output")
             .endPortGroup();
 
         pattern->addParameter("Dictionary", "DICT_4X4_50", {"DICT_4X4_50", "DICT_5X5_50", "DICT_6X6_50"})
-            .addParameter("MarkerSize", 0.08);
+            .addParameter("marker_size", 0.08);
         return pattern;
     }
 
@@ -61,7 +61,7 @@ class OpenCvArucoTracker : public Component {
                                        {{"DICT_4X4_50", cv::aruco::DICT_4X4_50},
                                         {"DICT_5X5_50", cv::aruco::DICT_5X5_50},
                                         {"DICT_6X6_50", cv::aruco::DICT_6X6_50}});
-        pattern::setValueFromParameter(pattern_instance, "MarkerSize", marker_size_, 0.08);
+        pattern::setValueFromParameter(pattern_instance, "marker_size", marker_size_, 0.08);
 
         dictionary_ = cv::aruco::getPredefinedDictionary(dict);
         parameter_ = cv::aruco::DetectorParameters::create();
@@ -69,7 +69,7 @@ class OpenCvArucoTracker : public Component {
         const auto& pose_groups = pattern_instance.port_groups[pose_port_group_.port_group_index];
         for (const auto& port_group_instance : pose_groups) {
             int marker_id;
-            port_group_instance->setValueFromParameter("MarkerId", marker_id);
+            port_group_instance->setValueFromParameter("marker_id", marker_id);
             marker_id_to_port_group_.emplace(marker_id, port_group_instance->port_group_instance_index);
         }
 

@@ -47,7 +47,7 @@ set(BASIC_COMPONENT_SRC
 set(IMGUI_BINDING_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.h
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.h
-        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp src/traact/component/vision/OpenCvCudaDownload.cpp)
+        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp src/traact/component/vision/OpenCvCudaDownload.cpp src/traact/component/vision/ApriltagTracker.cpp)
 
 find_package(imgui CONFIG)
 find_package(glfw3 CONFIG)

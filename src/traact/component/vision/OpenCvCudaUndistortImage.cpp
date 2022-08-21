@@ -24,8 +24,8 @@ class OpenCvCudaUndistortImage : public CudaComponent {
 
         traact::pattern::Pattern::Ptr
             pattern = CudaComponent::GetPattern("OpenCvCudaUndistortImage",
-                                               Concurrency::SERIAL,
-                                               ComponentType::SYNC_FUNCTIONAL);
+                                                Concurrency::SERIAL,
+                                                ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addConsumerPort<InPortCalibration>("input_calibration")
@@ -55,17 +55,21 @@ class OpenCvCudaUndistortImage : public CudaComponent {
     bool processTimePoint(buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
         const auto &image = data.getInput<InPortImage>().value();
-        const auto &calibration = data.getInput<InPortCalibration>();
         const auto &input_header = data.getInputHeader<InPortImage>();
+        const auto &calibration = data.getInput<InPortCalibration>();
 
         auto &output = data.getOutput<OutPortImage>().value();
-        output.create(image.size(),image.type());
-
         auto &output_header = data.getOutputHeader<OutPortImage>();
-        output_header.copyFrom(input_header);
         auto &output_calibration = data.getOutput<OutPortCalibration>();
 
-        undistortion_.init(calibration, optimize_intrinsics_, center_principle_point_, alpha_);
+        output.create(image.size(), image.type());
+        output_header.copyFrom(input_header);
+
+        undistortion_.init(calibration,
+                           optimize_intrinsics_,
+                           center_principle_point_,
+                           alpha_);
+
         output_calibration = undistortion_.getUndistortedCalibration();
 
         return true;
@@ -75,9 +79,13 @@ class OpenCvCudaUndistortImage : public CudaComponent {
         return [data, this](cudaStream_t stream) {
             if (data->isInputValid<InPortImage>()) {
                 const auto &input = data->getInput<InPortImage>().value();
+                const auto &calibration = data->getInput<InPortCalibration>();
                 auto &output = data->getOutput<OutPortImage>().value();
 
                 auto cv_stream = cv::cuda::StreamAccessor::wrapStream(stream);
+
+                undistortion_.init(cv_stream);
+
 
                 if (!undistortion_.undistortImage(input, output, cv_stream)) {
                     data->setOutputInvalid<OutPortImage>();

@@ -26,14 +26,14 @@ class StaticPose : public Component {
 
         pattern->addProducerPort<OutPort>("output");
 
-        pattern->addParameter("tx", 0);
-        pattern->addParameter("ty", 0);
-        pattern->addParameter("tz", 0);
+        pattern->addParameter("tx", 0.0, -10.0, 10.0);
+        pattern->addParameter("ty", 0.0, -10.0, 10.0);
+        pattern->addParameter("tz", 0.0, -10.0, 10.0);
 
-        pattern->addParameter("rx", 0);
-        pattern->addParameter("ry", 0);
-        pattern->addParameter("rz", 0);
-        pattern->addParameter("rw", 1);
+        pattern->addParameter("rx", 0.0, 0.0, 1.0);
+        pattern->addParameter("ry", 0.0, 0.0, 1.0);
+        pattern->addParameter("rz", 0.0, 0.0, 1.0);
+        pattern->addParameter("rw", 1.0, 0.0, 1.0);
 
         pattern->addCoordinateSystem("A").addCoordinateSystem("B").addEdge("A", "B", "output");
 
