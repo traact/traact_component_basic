@@ -41,10 +41,10 @@ class OpenCvColorToGray : public Component {
     }
 
     bool processTimePoint(buffer::ComponentBuffer &data) override {
-        const auto& input = data.getInput<InPort>().getImage();
+        const auto& input = data.getInput<InPort>().value();
         const auto& input_header = data.getInputHeader<InPort>();
 
-        auto &output = data.getOutput<OutPort>().getImage();
+        auto &output = data.getOutput<OutPort>().value();
         auto & output_header = data.getOutputHeader<InPort>();
         output_header.width = input_header.width;
         output_header.height = input_header.height;

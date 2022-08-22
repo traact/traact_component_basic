@@ -1,32 +1,31 @@
 /** Copyright (C) 2022  Frieder Pankratz <frieder.pankratz@gmail.com> **/
 
-#include <rttr/registration>
-
 #include <traact/traact.h>
 #include <traact/vision.h>
 #include <opencv2/videoio.hpp>
 #include <traact/component/vision/BasicVisionPattern.h>
-#include <traact/vision/UndistortionHelper.h>
+#include <traact/vision/GpuUndistortionHelper.h>
+#include <traact/component/CudaComponent.h>
+#include <opencv2/core/cuda_stream_accessor.hpp>
 
 namespace traact::component::opencv {
 
-class OpenCvUndistortImage : public Component {
+class OpenCvCudaUndistortImage : public CudaComponent {
  public:
-    using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
+    using InPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using InPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
-    using OutPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
+    using OutPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
     using OutPortCalibration = buffer::PortConfig<vision::CameraCalibrationHeader, 1>;
 
-    explicit OpenCvUndistortImage(const std::string &name) : Component(name) {
+    explicit OpenCvCudaUndistortImage(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
-            pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCvUndistortImage",
-                                                       Concurrency::SERIAL,
-                                                       ComponentType::SYNC_FUNCTIONAL);
+            pattern = CudaComponent::GetPattern("OpenCvCudaUndistortImage",
+                                                Concurrency::SERIAL,
+                                                ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
             .addConsumerPort<InPortCalibration>("input_calibration")
@@ -56,33 +55,60 @@ class OpenCvUndistortImage : public Component {
     bool processTimePoint(buffer::ComponentBuffer &data) override {
         using namespace traact::vision;
         const auto &image = data.getInput<InPortImage>().value();
-        const auto &calibration = data.getInput<InPortCalibration>();
         const auto &input_header = data.getInputHeader<InPortImage>();
+        const auto &calibration = data.getInput<InPortCalibration>();
 
         auto &output = data.getOutput<OutPortImage>().value();
         auto &output_header = data.getOutputHeader<OutPortImage>();
-        output_header.copyFrom(input_header);
         auto &output_calibration = data.getOutput<OutPortCalibration>();
 
-        undistortion_.init(calibration, optimize_intrinsics_, center_principle_point_, alpha_);
+        output.create(image.size(), image.type());
+        output_header.copyFrom(input_header);
+
+        undistortion_.init(calibration,
+                           optimize_intrinsics_,
+                           center_principle_point_,
+                           alpha_);
+
         output_calibration = undistortion_.getUndistortedCalibration();
 
-        return undistortion_.undistortImage(image, output);
+        return true;
+    }
+
+    CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
+        return [data, this](cudaStream_t stream) {
+            if (data->isInputValid<InPortImage>()) {
+                const auto &input = data->getInput<InPortImage>().value();
+                const auto &calibration = data->getInput<InPortCalibration>();
+                auto &output = data->getOutput<OutPortImage>().value();
+
+                auto cv_stream = cv::cuda::StreamAccessor::wrapStream(stream);
+
+                undistortion_.init(cv_stream);
+
+
+                if (!undistortion_.undistortImage(input, output, cv_stream)) {
+                    data->setOutputInvalid<OutPortImage>();
+                }
+
+            }
+
+        };
     }
 
  private:
-    ::traact::vision::UndistortionHelper undistortion_{};
+    ::traact::vision::GpuUndistortionHelper undistortion_{};
     bool optimize_intrinsics_{false};
     bool center_principle_point_{false};
     double alpha_{1.0};
 
 };
 
-CREATE_TRAACT_COMPONENT_FACTORY(OpenCvUndistortImage)
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvCudaUndistortImage)
 
 }
 
 BEGIN_TRAACT_PLUGIN_REGISTRATION
-    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvUndistortImage)
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvCudaUndistortImage)
 END_TRAACT_PLUGIN_REGISTRATION
 

@@ -5,27 +5,28 @@
 #include <traact/traact.h>
 #include <traact/vision.h>
 #include <opencv2/videoio.hpp>
-#include <traact/component/vision/BasicVisionPattern.h>
+#include <traact/component/CudaComponent.h>
+#include <opencv2/core/cuda_stream_accessor.hpp>
 
 namespace traact::component::opencv {
 
-class OpenCvConvertImage : public Component {
+class OpenCvCudaConvertImage : public CudaComponent {
  public:
-    using InPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
-    using OutPortImage = buffer::PortConfig<vision::ImageHeader, 0>;
-    explicit OpenCvConvertImage(const std::string &name) : Component(name) {
+    using InPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
+    using OutPortImage = buffer::PortConfig<vision::GpuImageHeader, 0>;
+    explicit OpenCvCudaConvertImage(const std::string &name) : CudaComponent(name) {
     }
 
     static traact::pattern::Pattern::Ptr GetPattern() {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCvConvertImage", Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
+            CudaComponent::GetPattern("OpenCvCudaConvertImage", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
-        .addProducerPort<OutPortImage>("output")
-        .addParameter("alpha", 255.0 / 2000.0, 0.0, 1.0)
-        .addParameter("beta", 0.0, -255.0, 255.0);
+            .addProducerPort<OutPortImage>("output")
+            .addParameter("alpha", 255.0 / 2000.0, 0.0, 1.0)
+            .addParameter("beta", 0.0, -255.0, 255.0);
 
         pattern->addCoordinateSystem("ImagePlane")
             .addCoordinateSystem("Image", true)
@@ -52,10 +53,25 @@ class OpenCvConvertImage : public Component {
         output_header.copyFrom(input_header);
         output_header.pixel_format = vision::PixelFormat::LUMINANCE;
         output_header.base_type = BaseType::UINT_8;
+        output.create(image.rows, image.cols, CV_8UC1);
 
-        image.convertTo(output, CV_8U, alpha_, beta_);
+
 
         return true;
+    }
+
+    CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
+        return [data, this](cudaStream_t stream) {
+            if(data->isInputValid<InPortImage>()){
+                const auto &input = data->getInput<InPortImage>().value();
+                auto &output = data->getOutput<OutPortImage>().value();
+
+                auto cv_stream = cv::cuda::StreamAccessor::wrapStream(stream);
+
+                input.convertTo(output, CV_8U, alpha_, beta_, cv_stream);
+            }
+
+        };
     }
 
  private:
@@ -66,10 +82,10 @@ class OpenCvConvertImage : public Component {
 
 };
 
-CREATE_TRAACT_COMPONENT_FACTORY(OpenCvConvertImage)
+CREATE_TRAACT_COMPONENT_FACTORY(OpenCvCudaConvertImage)
 
 }
 
 BEGIN_TRAACT_PLUGIN_REGISTRATION
-    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvConvertImage)
+    REGISTER_DEFAULT_COMPONENT(traact::component::opencv::OpenCvCudaConvertImage)
 END_TRAACT_PLUGIN_REGISTRATION

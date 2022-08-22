@@ -8,7 +8,7 @@ endif ()
 
 list(APPEND CMAKE_MODULE_PATH ${CONAN_TRAACT_RUN_ENV_ROOT}/cmake)
 
-project(${CONAN_PACKAGE_NAME}_PROJECT VERSION ${CONAN_PACKAGE_VERSION})
+project(${CONAN_PACKAGE_NAME}_PROJECT VERSION ${CONAN_PACKAGE_VERSION} LANGUAGES CXX)
 
 include(traact_default_library_setup)
 
@@ -39,22 +39,30 @@ set(BASIC_COMPONENT_SRC
         src/traact/component/render/RenderModuleComponent.h
         src/traact/component/tracking/GatherCameraInitPose.cpp
         src/traact/component/vision/OpenCvArucoTracker.cpp
-        src/traact/component/tracking/OutsideInPointEstimation.cpp src/traact/component/spatial/MultiplicationPose6DPosition3DList.cpp src/traact/component/tracking/FindTargetInPosition3DList.cpp)
+        src/traact/component/tracking/OutsideInPointEstimation.cpp src/traact/component/spatial/MultiplicationPose6DPosition3DList.cpp src/traact/component/tracking/FindTargetInPosition3DList.cpp
+        src/traact/component/vision/OpenCvCudaEncode.cpp
+        )
 
 
 set(IMGUI_BINDING_SOURCES ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.h
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_glfw.cpp
         ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.h
-        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp)
+        ${CMAKE_CURRENT_BINARY_DIR}/imgui_bindings/imgui_impl_opengl3.cpp src/traact/component/vision/OpenCvCudaDownload.cpp src/traact/component/vision/ApriltagTracker.cpp)
 
 find_package(imgui CONFIG)
 find_package(glfw3 CONFIG)
 find_package(glew CONFIG)
 
+
+
 add_library(${CONAN_PACKAGE_NAME} SHARED
         ${IMGUI_BINDING_SOURCES}
         ${BASIC_COMPONENT_SRC}
-        )
+        src/traact/component/vision/OpenCvCudaDecode.cpp src/traact/component/vision/OpenCvCudaUpload.cpp src/traact/component/vision/OpenCvCudaConvertImage.cpp src/traact/component/vision/OpenCvCudaUndistortImage.cpp
+        src/traact/component/vision/VisionGpuFunctions.cu src/traact/component/vision/VisionGpuFunctions.cuh src/traact/component/vision/OpenCvCudaCvtColor.cpp)
+
+
+
 
 target_compile_definitions(${CONAN_PACKAGE_NAME} PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLEW)
 

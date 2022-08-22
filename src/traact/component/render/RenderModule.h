@@ -69,6 +69,8 @@ class RenderModule : public Module {
 
     void processTimePoint() override;
 
+    virtual bool useConstraints() const override;
+
     size_t addComponent(std::string window_name,
                         const std::string &component_name,
                         RenderComponent *component,
