@@ -20,7 +20,7 @@ class OpenCvConvertImage : public Component {
 
         traact::pattern::Pattern::Ptr
             pattern =
-            std::make_shared<traact::pattern::Pattern>("OpenCvConvertImage", Concurrency::SERIAL, ComponentType::SYNC_FUNCTIONAL);
+            std::make_shared<traact::pattern::Pattern>("OpenCvConvertImage", Concurrency::UNLIMITED, ComponentType::SYNC_FUNCTIONAL);
 
         pattern->addConsumerPort<InPortImage>("input")
         .addProducerPort<OutPortImage>("output")
