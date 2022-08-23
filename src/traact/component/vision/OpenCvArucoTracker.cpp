@@ -33,13 +33,13 @@ class OpenCvArucoTracker : public Component {
         pattern->beginPortGroup("output_pose", 1, std::numeric_limits<int>::max())
             .addProducerPort<OutPortGroupPose>("output")
             .addParameter("marker_id", 0, 0)
+            .addParameter("marker_size", 0.08)
             .endPortGroup();
         pattern->beginPortGroup("output_debug", 0, 1)
             .addProducerPort<OutPortGroupDebug>("output")
             .endPortGroup();
 
-        pattern->addParameter("Dictionary", "DICT_4X4_50", {"DICT_4X4_50", "DICT_5X5_50", "DICT_6X6_50"})
-            .addParameter("marker_size", 0.08);
+        pattern->addParameter("dictionary", "DICT_4X4_50", {"DICT_4X4_50", "DICT_5X5_50", "DICT_6X6_50"});
         return pattern;
     }
 
@@ -55,22 +55,36 @@ class OpenCvArucoTracker : public Component {
                    buffer::ComponentBufferConfig *data) override {
         cv::aruco::PREDEFINED_DICTIONARY_NAME dict;
         pattern::setValueFromParameter(pattern_instance,
-                                       "Dictionary",
+                                       "dictionary",
                                        dict,
                                        "DICT_4X4_50",
                                        {{"DICT_4X4_50", cv::aruco::DICT_4X4_50},
                                         {"DICT_5X5_50", cv::aruco::DICT_5X5_50},
                                         {"DICT_6X6_50", cv::aruco::DICT_6X6_50}});
-        pattern::setValueFromParameter(pattern_instance, "marker_size", marker_size_, 0.08);
 
         dictionary_ = cv::aruco::getPredefinedDictionary(dict);
         parameter_ = cv::aruco::DetectorParameters::create();
 
+        marker_id_to_index_.clear();
+
         const auto& pose_groups = pattern_instance.port_groups[pose_port_group_.port_group_index];
+
+        marker_index_port_group_.resize(pose_groups.size());
+        marker_index_marker_size_.resize(pose_groups.size());
+
+        size_t marker_index{0};
+
         for (const auto& port_group_instance : pose_groups) {
-            int marker_id;
+            int marker_id{0};
+            double marker_size{0};
             port_group_instance->setValueFromParameter("marker_id", marker_id);
-            marker_id_to_port_group_.emplace(marker_id, port_group_instance->port_group_instance_index);
+            port_group_instance->setValueFromParameter("marker_size", marker_size);
+
+
+            marker_id_to_index_.emplace(marker_id, marker_index);
+            marker_index_port_group_[marker_index] = port_group_instance->port_group_instance_index;
+            marker_index_marker_size_[marker_index] = marker_size;
+            ++marker_index;
         }
 
         return true;
@@ -110,26 +124,39 @@ class OpenCvArucoTracker : public Component {
             cv::Mat distortionCoefficientsMatrix;
             traact2cv(input_calibration, cameraMatrix, distortionCoefficientsMatrix);
 
-            std::vector<cv::Vec3d> r_vecs;
-            std::vector<cv::Vec3d> t_vecs;
+            std::vector<cv::Vec3d> opencv_rotations;
+            std::vector<cv::Vec3d> opencv_tranlations;
+            std::vector<std::vector<cv::Point2f>> current_marker(1);
 
-            cv::aruco::estimatePoseSingleMarkers(
-                markers, marker_size_,
-                cameraMatrix,
-                distortionCoefficientsMatrix,
-                r_vecs,
-                t_vecs);
 
-            for (size_t marker_index = 0; marker_index < marker_ids.size(); ++marker_index) {
-                auto marker_id = marker_ids[marker_index];
-                auto is_output_marker = marker_id_to_port_group_.find(marker_id);
-                if (is_output_marker == marker_id_to_port_group_.end()) {
+
+
+
+            for (size_t found_marker_index = 0; found_marker_index < marker_ids.size(); ++found_marker_index) {
+                auto marker_id = marker_ids[found_marker_index];
+                auto is_output_marker = marker_id_to_index_.find(marker_id);
+                if (is_output_marker == marker_id_to_index_.end()) {
                     continue;
                 }
-                auto port_group_instance_index = is_output_marker->second;
+                auto marker_index = is_output_marker->second;
+                auto port_group_instance_index = marker_index_port_group_[marker_index];
+                auto marker_size = marker_index_marker_size_[marker_index];
+
+                current_marker[0] = std::move(markers[found_marker_index]);
+                opencv_rotations.clear();
+                opencv_tranlations.clear();
+
+                cv::aruco::estimatePoseSingleMarkers(
+                    current_marker, marker_size,
+                    cameraMatrix,
+                    distortionCoefficientsMatrix,
+                    opencv_rotations,
+                    opencv_tranlations);
+
                 SPDLOG_TRACE("send pose for port group instance {0}", port_group_instance_index);
                 auto& output = data.getOutput<OutPortGroupPose>(pose_port_group_.port_group_index, port_group_instance_index );
-                cv2traact(r_vecs[marker_index], t_vecs[marker_index], output);
+                cv2traact(opencv_rotations[0], opencv_tranlations[0], output);
+                output.translation() *= marker_size;
             }
         }
 
@@ -139,8 +166,9 @@ class OpenCvArucoTracker : public Component {
  private:
     cv::Ptr<cv::aruco::Dictionary> dictionary_;
     cv::Ptr<cv::aruco::DetectorParameters> parameter_;
-    double marker_size_;
-    std::map<int, int> marker_id_to_port_group_;
+    std::map<int, int> marker_id_to_index_{};
+    std::vector<int> marker_index_port_group_{};
+    std::vector<double> marker_index_marker_size_{};
     PortGroupInfo pose_port_group_;
     PortGroupInfo debug_port_group_;
 
