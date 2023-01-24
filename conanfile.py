@@ -22,7 +22,7 @@ class TraactPackage(ConanFile):
     def requirements(self):
         self.traact_requires("traact_spatial", "latest")
         self.traact_requires("traact_vision", "latest")
-        self.requires("spdlog/1.10.0")
+        self.requires("spdlog/1.11.0")
         #self.requires("imgui/1.83")
         self.requires("imgui/cci.20220207+1.87.docking")
         self.requires("glfw/3.3.4")
@@ -30,7 +30,7 @@ class TraactPackage(ConanFile):
         self.requires("apriltag/3.1.4@camposs/stable")
 
         if self.options.with_tests:
-            self.requires("gtest/[>=1.11.0]")
+            self.requires("gtest/cci.20210126")
 
     def imports(self):
         self.copy(src="./res/bindings", pattern="imgui_impl_glfw.*", dst="imgui_bindings", root_package='imgui')
