@@ -3,6 +3,7 @@
 #include <traact/traact.h>
 #include <traact/vision.h>
 #include <traact/spatial.h>
+#include <memory>
 #include <opencv2/aruco.hpp>
 #include <traact/opencv/OpenCVUtils.h>
 
@@ -53,7 +54,7 @@ class OpenCvArucoTracker : public Component {
 
     bool configure(const pattern::instance::PatternInstance &pattern_instance,
                    buffer::ComponentBufferConfig *data) override {
-        cv::aruco::PREDEFINED_DICTIONARY_NAME dict;
+        cv::aruco::PredefinedDictionaryType dict;
         pattern::setValueFromParameter(pattern_instance,
                                        "dictionary",
                                        dict,
@@ -62,8 +63,10 @@ class OpenCvArucoTracker : public Component {
                                         {"DICT_5X5_50", cv::aruco::DICT_5X5_50},
                                         {"DICT_6X6_50", cv::aruco::DICT_6X6_50}});
 
-        dictionary_ = cv::aruco::getPredefinedDictionary(dict);
-        parameter_ = cv::aruco::DetectorParameters::create();
+        auto dictionary = cv::aruco::getPredefinedDictionary(dict);
+        auto parameter = cv::aruco::DetectorParameters();
+
+        detector_ = std::make_unique<cv::aruco::ArucoDetector>(dictionary, parameter);
 
         marker_id_to_index_.clear();
 
@@ -97,12 +100,10 @@ class OpenCvArucoTracker : public Component {
 
         std::vector<std::vector<cv::Point2f>> markers, rejected_candidates;
         std::vector<int32_t> marker_ids;
-        cv::aruco::detectMarkers(
+        detector_->detectMarkers(
             input_image,
-            dictionary_,
             markers,
             marker_ids,
-            parameter_,
             rejected_candidates);
 
         if (debug_port_group_.size > 0) {
@@ -164,8 +165,7 @@ class OpenCvArucoTracker : public Component {
     }
 
  private:
-    cv::Ptr<cv::aruco::Dictionary> dictionary_;
-    cv::Ptr<cv::aruco::DetectorParameters> parameter_;
+    std::unique_ptr<cv::aruco::ArucoDetector> detector_;
     std::map<int, int> marker_id_to_index_{};
     std::vector<int> marker_index_port_group_{};
     std::vector<double> marker_index_marker_size_{};
