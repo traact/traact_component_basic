@@ -77,10 +77,11 @@ class OpenCvCudaCvtColor : public CudaComponent {
     }
 
     CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
+
         return [data, cvt_code = cvt_code_](cudaStream_t stream) {
             if(data->isInputValid<InPortImage>()){
-                const auto &input_image = data->getInput<InPortImage>().value();
-                auto &output_image = data->getOutput<OutPortImage>().value();
+              const auto& input_image = data->getInput<InPortImage>().value();
+              auto& output_image = data->getOutput<OutPortImage>().value();
 
                 auto cv_stream = cv::cuda::StreamAccessor::wrapStream(stream);
                 cv::cuda::cvtColor(input_image, output_image, cvt_code, 0, cv_stream );

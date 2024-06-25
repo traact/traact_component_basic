@@ -52,11 +52,12 @@ class OpenCvCudaDownload : public CudaComponent {
     }
 
     CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
+
         return [data](cudaStream_t stream) {
             if(data->isInputValid<InPortImage>()){
+
                 const auto &gpu_image = data->getInput<InPortImage>().value();
                 auto &cpu_image = data->getOutput<OutPortImage>().value();
-
 //                auto status = cudaMemcpy2DAsync(cpu_image.data, cpu_image.step, gpu_image.data, gpu_image.step, gpu_image.cols, gpu_image.rows, cudaMemcpyDeviceToHost, stream);
 //                if(status != cudaSuccess){
 //                    SPDLOG_ERROR("unable to download to cpu");

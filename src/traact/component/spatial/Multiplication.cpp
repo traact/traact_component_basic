@@ -22,8 +22,8 @@ class Multiplication : public Component {
         pattern->addCoordinateSystem("A", false)
             .addCoordinateSystem("B", false)
             .addCoordinateSystem("C", false)
-            .addEdge("A", "B", "input0")
-            .addEdge("B", "C", "input1")
+            .addEdge("A", "B", "input_a")
+            .addEdge("B", "C", "input_b")
             .addEdge("A", "C", "output");
 
         return

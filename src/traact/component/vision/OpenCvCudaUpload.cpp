@@ -44,11 +44,12 @@ class OpenCvCudaUpload : public CudaComponent {
     }
 
     CudaTask createGpuTask(buffer::ComponentBuffer *data) override {
+
         return [data](cudaStream_t stream) {
 
             if(data->isInputValid<InPortImage>()){
-                const auto &cpu_image = data->getInput<InPortImage>().value();
-                auto &gpu_image = data->getOutput<OutPortImage>().value();
+                const auto& cpu_image = data->getInput<InPortImage>().value();
+                auto& gpu_image = data->getOutput<OutPortImage>().value();
                 auto cv_stream = cv::cuda::StreamAccessor::wrapStream(stream);
                 gpu_image.upload(cpu_image, cv_stream);
             }

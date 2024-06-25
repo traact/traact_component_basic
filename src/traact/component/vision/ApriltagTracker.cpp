@@ -141,6 +141,7 @@ class ApriltagTracker : public Component {
 
             Eigen::Affine3d pose = Eigen::Translation3d(translation) * Eigen::Quaterniond(rotation.transpose());
 
+
             data.getOutput<OutPortGroupPose>(pose_port_group_.port_group_index, port_index->second) = pose.cast<Scalar>();
 
 
